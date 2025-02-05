@@ -37,6 +37,7 @@ import coil.compose.AsyncImage
 import com.deezer.exoapplication.R
 import com.deezer.exoapplication.playlist.domain.Track
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
+import com.deezer.exoapplication.ui.theme.Size
 
 class AllTracksActivity : ComponentActivity() {
 
@@ -50,7 +51,9 @@ class AllTracksActivity : ComponentActivity() {
                 Scaffold { contentPadding ->
                     Box(modifier = Modifier
                         .fillMaxSize()
-                        .padding(contentPadding)) {
+                        .padding(contentPadding),
+                        contentAlignment = Alignment.Center
+                    ) {
                         when (state) {
                             TrackListViewModel.UiState.Loading -> LoadingScreen()
                             TrackListViewModel.UiState.Empty -> EmptyScreen()
@@ -72,17 +75,17 @@ class AllTracksActivity : ComponentActivity() {
 
 @Composable
 fun LoadingScreen() {
-    Text(text = "Loading")
+    Text(text = "Loading...", style = MaterialTheme.typography.headlineMedium)
 }
 
 @Composable
 fun EmptyScreen() {
-    Text(text = "No tracks :(")
+    Text(text = "No tracks :(", style = MaterialTheme.typography.headlineMedium)
 }
 
 @Composable
 fun ErrorScreen() {
-    Text(text = "Error")
+    Text(text = "Error", style = MaterialTheme.typography.headlineMedium)
 }
 
 @Composable
@@ -95,7 +98,7 @@ fun TrackListScreen(
         items(trackList) { track ->
             TrackItem(track = track, onTrackClick = onTrackClick)
             if (track != trackList.last()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Size.Spacing.Small))
             }
         }
     }
@@ -116,12 +119,13 @@ fun TrackItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(Size.Spacing.Medium),
             verticalAlignment = Alignment.CenterVertically
         ) {
             TrackImage(track.coverImageUrl)
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(Size.Spacing.Medium))
             TrackInfo(track)
+            Spacer(modifier = Modifier.width(Size.Spacing.Medium))
         }
     }
 }
@@ -131,7 +135,7 @@ fun TrackImage(imageUrl: String) {
     AsyncImage(
         model = imageUrl,
         contentDescription = "Track Cover",
-        modifier = Modifier.size(64.dp),
+        modifier = Modifier.size(Size.Image.Medium),
         placeholder = painterResource(id = R.drawable.vinyl),
         error = painterResource(id = R.drawable.vinyl_broken)
     )
@@ -154,6 +158,14 @@ fun TrackInfo(track: Track) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EmptyScreenPreview() {
+    ExoAppTheme {
+        EmptyScreen()
     }
 }
 
