@@ -17,8 +17,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.deezer.exoapplication.R
-import com.deezer.exoapplication.playlist.domain.Track
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
 import com.deezer.exoapplication.ui.theme.Size
 
@@ -46,12 +50,13 @@ class AllTracksActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val state by viewModel.state.collectAsStateWithLifecycle()
+            val state by viewModel.state.collectAsStateWithLifecycle(TrackListViewModel.UiState.Loading)
             ExoAppTheme {
                 Scaffold { contentPadding ->
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .padding(contentPadding),
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(contentPadding),
                         contentAlignment = Alignment.Center
                     ) {
                         when (state) {
@@ -90,7 +95,7 @@ fun ErrorScreen() {
 
 @Composable
 fun TrackListScreen(
-    trackList: List<Track>,
+    trackList: List<TrackListViewModel.TrackUiModel>,
     onTrackClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -106,7 +111,7 @@ fun TrackListScreen(
 
 @Composable
 fun TrackItem(
-    track: Track,
+    track: TrackListViewModel.TrackUiModel,
     onTrackClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -126,6 +131,22 @@ fun TrackItem(
             Spacer(modifier = Modifier.width(Size.Spacing.Medium))
             TrackInfo(track)
             Spacer(modifier = Modifier.width(Size.Spacing.Medium))
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                if (track.isInQueue) {
+                    Icon(
+                        painter = rememberVectorPainter(image = Icons.Default.Check),
+                        contentDescription = "In queue"
+                    )
+                } else {
+                    Icon(
+                        painter = rememberVectorPainter(image = Icons.Default.Add),
+                        contentDescription = "Click to add to queue"
+                    )
+                }
+            }
         }
     }
 }
@@ -142,7 +163,7 @@ fun TrackImage(imageUrl: String) {
 }
 
 @Composable
-fun TrackInfo(track: Track) {
+fun TrackInfo(track: TrackListViewModel.TrackUiModel) {
     Column {
         Text(
             text = track.title,
@@ -174,7 +195,7 @@ fun EmptyScreenPreview() {
 fun TrackItemPreview() {
     ExoAppTheme {
         TrackItem(
-            track = Track(
+            track = TrackListViewModel.TrackUiModel(
                 id = 1,
                 title = "Track Title",
                 durationInSeconds = 180,
