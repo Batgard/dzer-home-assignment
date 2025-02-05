@@ -1,7 +1,14 @@
 package com.deezer.exoapplication.playlist.domain
 
-import com.deezer.exoapplication.playlist.fwk.models.Track
-
 interface DeezerRepository {
-    suspend fun getTrackList(): Result<List<Track>> //TODO: Map the entity to something relevant to the business logic layer
+    suspend fun getTrackList(): Result<List<Track>>
 }
+
+data class Track(
+    val id: Int,
+    val title: String,
+    val durationInSeconds: Int,
+    val coverImageUrl: String,
+    val artistName: String,
+    val albumTitle: String,
+)

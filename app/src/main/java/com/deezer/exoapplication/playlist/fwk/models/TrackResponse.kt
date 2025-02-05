@@ -17,7 +17,7 @@ data class Track(
     @SerialName("readable") val readable: Boolean,
     @SerialName("title") val title: String,
     @SerialName("title_short") val titleShort: String,
-    @SerialName("title_version") val titleVersion: String,
+    @SerialName("title_version") val titleVersion: String? = null,
     @SerialName("link") val link: String,
     @SerialName("duration") val duration: Int,
     @SerialName("rank") val rank: Int,
