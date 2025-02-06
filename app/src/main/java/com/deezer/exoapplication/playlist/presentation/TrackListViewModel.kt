@@ -25,11 +25,11 @@ class TrackListViewModel(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
-    private val trackListState: MutableStateFlow<TrackListState> =
-        MutableStateFlow(TrackListState.Success())
+    private val trackListState: MutableStateFlow<TrackListState> = MutableStateFlow(TrackListState.Initial)
     val state: Flow<UiState> =
         combine(queueRepository.getQueue(), trackListState) { queue, trackList ->
             when (trackList) {
+                TrackListState.Initial -> UiState.Loading
                 TrackListState.Empty -> UiState.Empty
                 is TrackListState.Success -> UiState.Success(trackList.tracks.map { track ->
                     track.toUiModel(queue.contains(track))
@@ -79,8 +79,9 @@ class TrackListViewModel(
     }
 
     sealed interface TrackListState {
+        object Initial : TrackListState
         object Empty : TrackListState
-        data class Success(val tracks: List<Track> = emptyList()) : TrackListState
+        data class Success(val tracks: List<Track>) : TrackListState
         data class Error(val message: String) : TrackListState
     }
 

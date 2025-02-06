@@ -1,9 +1,11 @@
 package com.deezer.exoapplication.playlist.presentation
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,6 +61,7 @@ class AllTracksActivity : ComponentActivity() {
                             .padding(contentPadding),
                         contentAlignment = Alignment.Center
                     ) {
+                        Log.d("State", "$state")
                         when (state) {
                             TrackListViewModel.UiState.Loading -> LoadingScreen()
                             TrackListViewModel.UiState.Empty -> EmptyScreen()
@@ -71,7 +74,6 @@ class AllTracksActivity : ComponentActivity() {
                             )
                         }
                     }
-
                 }
             }
         }
@@ -187,6 +189,14 @@ fun TrackInfo(track: TrackListViewModel.TrackUiModel) {
 fun EmptyScreenPreview() {
     ExoAppTheme {
         EmptyScreen()
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LoadingScreenPreview() {
+    ExoAppTheme {
+        LoadingScreen()
     }
 }
 
