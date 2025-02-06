@@ -12,4 +12,5 @@ data class Track(
     val artistName: String,
     val albumTitle: String,
     val previewUrl: String,
+    val readable: Boolean,
 )

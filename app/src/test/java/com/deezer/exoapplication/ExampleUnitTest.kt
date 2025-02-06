@@ -12,6 +12,8 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
+        val list = mutableListOf(1, 2, 4)
+        val list2 = list - 3
+        assertEquals(list, list2)
     }
 }

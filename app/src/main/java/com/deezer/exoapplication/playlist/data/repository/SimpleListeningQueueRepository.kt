@@ -3,12 +3,14 @@ package com.deezer.exoapplication.playlist.data.repository
 import android.content.res.Resources.NotFoundException
 import com.deezer.exoapplication.playlist.domain.ListeningQueueRepository
 import com.deezer.exoapplication.playlist.domain.Track
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import okhttp3.internal.toImmutableList
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
-class SimpleListeningQueueRepository(private val dataSource: TracksDataSource): ListeningQueueRepository {
-    override suspend fun getQueue(): List<Track> { // TODO: Shall we use a flow so that whenever there's a change in the queue, the collectors get notified
+class SimpleListeningQueueRepository(private val dataSource: TracksDataSource) :
+    ListeningQueueRepository {
+    override fun getQueue(): StateFlow<List<Track>> {
         return dataSource.getTracks()
     }
 
@@ -27,33 +29,29 @@ class SimpleListeningQueueRepository(private val dataSource: TracksDataSource): 
 }
 
 interface TracksDataSource {
-    suspend fun getTracks(): List<Track>
+    fun getTracks(): StateFlow<List<Track>>
     suspend fun addTrack(track: Track)
     suspend fun removeTrack(track: Track): Boolean
 }
 
-object DummyTracksDataSource: TracksDataSource { // TODO: Store IDs in database and files on disk
+object DummyTracksDataSource : TracksDataSource { // TODO: Store IDs in database and files on disk
 
-    private val mutex = Mutex()
-    private val tracks: MutableList<Track> = mutableListOf()
+    private val tracksFlow: MutableStateFlow<List<Track>> = MutableStateFlow(emptyList())
 
-    override suspend fun getTracks(): List<Track> {
-        val list = mutex.withLock {
-            tracks.toImmutableList()
-        }
-        return list
+    override fun getTracks(): StateFlow<List<Track>> {
+        return tracksFlow.asStateFlow()
     }
 
     override suspend fun addTrack(track: Track) {
-        mutex.withLock {
-            tracks.add(track)
+        tracksFlow.update {
+            it + track
         }
     }
 
     override suspend fun removeTrack(track: Track): Boolean {
-        return mutex.withLock {
-            val trackToRemove = tracks.find { it.id == track.id }
-            tracks.remove(trackToRemove)
+        tracksFlow.update {
+            it - track
         }
+        return true
     }
 }

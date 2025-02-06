@@ -8,9 +8,9 @@ import com.deezer.exoapplication.playlist.data.repository.SimpleDeezerRepository
 import com.deezer.exoapplication.playlist.data.repository.SimpleListeningQueueRepository
 import com.deezer.exoapplication.playlist.domain.ListeningQueueRepository
 import com.deezer.exoapplication.playlist.domain.Track
-import com.deezer.exoapplication.playlist.domain.usecases.AndroidUrlValidator
 import com.deezer.exoapplication.playlist.domain.usecases.GetTracksWithPreviewUseCase
 import com.deezer.exoapplication.playlist.fwk.remote.DeezerApiImpl
+import com.deezer.exoapplication.playlist.fwk.utils.AndroidUrlValidator
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -25,24 +25,22 @@ class TrackListViewModel(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
-    private val queueState: MutableStateFlow<List<Track>> = MutableStateFlow(emptyList())
     private val trackListState: MutableStateFlow<TrackListState> =
         MutableStateFlow(TrackListState.Success())
-    val state: Flow<UiState> = combine(queueState, trackListState) { queue, trackList ->
-        when (trackList) {
-            TrackListState.Empty -> UiState.Empty
-            is TrackListState.Success -> UiState.Success(trackList.tracks.map { track ->
-                track.toUiModel(queue.contains(track))
-            })
+    val state: Flow<UiState> =
+        combine(queueRepository.getQueue(), trackListState) { queue, trackList ->
+            when (trackList) {
+                TrackListState.Empty -> UiState.Empty
+                is TrackListState.Success -> UiState.Success(trackList.tracks.map { track ->
+                    track.toUiModel(queue.contains(track))
+                })
 
-            is TrackListState.Error -> UiState.Error(trackList.message)
+                is TrackListState.Error -> UiState.Error(trackList.message)
+            }
         }
-    }
 
     init {
         viewModelScope.launch(dispatcher) {
-            queueState.update { queueRepository.getQueue() }
-
             getTracksWithPreview().onSuccess { tracks ->
                 trackListState.update {
                     TrackListState.Success(tracks)
@@ -60,12 +58,11 @@ class TrackListViewModel(
             val track =
                 (trackListState.value as? TrackListState.Success)?.tracks?.find { it.id == trackId }
                     ?: throw IllegalArgumentException("Track not found") // TODO: Just show a toaster with an error message and log the issue to the monitoring tool (Crashlytics or something else)
-            if (queueState.value.contains(track)) {
+            if (queueRepository.getQueue().value.contains(track)) {
                 queueRepository.removeTrackFromQueue(track)
             } else {
                 queueRepository.addTrackToQueue(track)
             }
-            queueState.update { queueRepository.getQueue() } // FIXME: Of course, if repo would return a flow, I wouldn't have to do that
         }
     }
 

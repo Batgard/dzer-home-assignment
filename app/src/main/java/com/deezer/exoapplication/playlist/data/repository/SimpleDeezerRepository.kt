@@ -23,6 +23,7 @@ class SimpleDeezerRepository(
                         artistName = it.artist.name,
                         albumTitle = it.album.title,
                         previewUrl = it.preview,
+                        readable = it.readable,
                     )
                 }
             })
