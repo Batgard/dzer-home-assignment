@@ -34,8 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,7 +44,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
-import coil.compose.AsyncImage
 import com.deezer.exoapplication.player.presentation.PlayerViewModel
 import com.deezer.exoapplication.playlist.presentation.AllTracksActivity
 import com.deezer.exoapplication.playlist.presentation.TrackImage
@@ -80,15 +77,16 @@ class MainActivity : ComponentActivity() {
                         ) {
                             (state as? PlayerViewModel.UiState.Success)?.let { state1 ->
                                 val rowState = rememberLazyListState()
-                                val selectedTrack by remember { mutableIntStateOf(state1.currentTrackIndex) }
 
-                                LaunchedEffect(selectedTrack) {
-                                    Log.d("Player", "Scrolling to $selectedTrack")
-                                    rowState.scrollToItem(selectedTrack)
+                                LaunchedEffect(state1.currentTrackIndex) {
+                                    Log.d("Player", "Scrolling to ${state1.currentTrackIndex}")
+                                    rowState.scrollToItem(state1.currentTrackIndex)
                                 }
 
-                                LazyRow(modifier = Modifier.fillMaxWidth(),
-                                    state = rowState) {
+                                LazyRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    state = rowState
+                                ) {
                                     items((state as PlayerViewModel.UiState.Success).tracks) {
                                         val configuration = LocalConfiguration.current
                                         val cardWidth: Dp by remember {
@@ -97,14 +95,21 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
 
-                                        Card(modifier = Modifier
-                                            .width(cardWidth)
-                                            .aspectRatio(1f)
+                                        Card(
+                                            modifier = Modifier
+                                                .width(cardWidth)
+                                                .aspectRatio(1f)
                                         ) {
                                             Box(modifier = Modifier.fillMaxSize()) {
-                                                TrackImage(it.coverImageUrl, modifier = Modifier.fillParentMaxSize())
+                                                TrackImage(
+                                                    it.coverImageUrl,
+                                                    modifier = Modifier.fillParentMaxSize()
+                                                )
                                                 if (it.readable.not()) {
-                                                    Log.d("Player", "$it has been marked as unplayable")
+                                                    Log.d(
+                                                        "Player",
+                                                        "$it has been marked as unplayable"
+                                                    )
                                                     Text("Preview can't be played :(")
                                                 }
                                             }

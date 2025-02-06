@@ -50,7 +50,9 @@ class PlayerViewModel(
 
 
     private fun getSelectedTrackIndex(queue: List<Track>, trackId: Int): Int {
-        return queue.indexOfFirst { it.id == trackId }.coerceAtLeast(0)
+        val indexOfFirst = queue.indexOfFirst { it.id == trackId }
+        Log.d("Player", "getSelectedTrackIndex: ${indexOfFirst}")
+        return indexOfFirst.coerceAtLeast(0)
     }
 
 
