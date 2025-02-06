@@ -154,11 +154,11 @@ fun TrackItem(
 }
 
 @Composable
-fun TrackImage(imageUrl: String) {
+fun TrackImage(imageUrl: String, modifier: Modifier = Modifier.size(Size.Image.Medium)) {
     AsyncImage(
         model = imageUrl,
         contentDescription = "Track Cover",
-        modifier = Modifier.size(Size.Image.Medium),
+        modifier = modifier,
         placeholder = painterResource(id = R.drawable.vinyl),
         error = painterResource(id = R.drawable.vinyl_broken)
     )
