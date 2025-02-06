@@ -11,4 +11,5 @@ data class Track(
     val coverImageUrl: String,
     val artistName: String,
     val albumTitle: String,
+    val previewUrl: String,
 )

@@ -22,6 +22,7 @@ class SimpleDeezerRepository(
                         coverImageUrl = it.album.cover,
                         artistName = it.artist.name,
                         albumTitle = it.album.title,
+                        previewUrl = it.preview,
                     )
                 }
             })

@@ -6,9 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.deezer.exoapplication.playlist.data.repository.DummyTracksDataSource
 import com.deezer.exoapplication.playlist.data.repository.SimpleDeezerRepository
 import com.deezer.exoapplication.playlist.data.repository.SimpleListeningQueueRepository
-import com.deezer.exoapplication.playlist.domain.DeezerRepository
 import com.deezer.exoapplication.playlist.domain.ListeningQueueRepository
 import com.deezer.exoapplication.playlist.domain.Track
+import com.deezer.exoapplication.playlist.domain.usecases.AndroidUrlValidator
+import com.deezer.exoapplication.playlist.domain.usecases.GetTracksWithPreviewUseCase
 import com.deezer.exoapplication.playlist.fwk.remote.DeezerApiImpl
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -19,7 +20,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class TrackListViewModel(
-    private val deezerRepository: DeezerRepository,
+    private val getTracksWithPreview: GetTracksWithPreviewUseCase,
     private val queueRepository: ListeningQueueRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
@@ -42,7 +43,7 @@ class TrackListViewModel(
         viewModelScope.launch(dispatcher) {
             queueState.update { queueRepository.getQueue() }
 
-            deezerRepository.getTrackList().onSuccess { tracks ->
+            getTracksWithPreview().onSuccess { tracks ->
                 trackListState.update {
                     TrackListState.Success(tracks)
                 }
@@ -108,7 +109,10 @@ class TrackListViewModel(
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(TrackListViewModel::class.java)) {
                 return TrackListViewModel(
-                    deezerRepository = SimpleDeezerRepository(DeezerApiImpl()),
+                    getTracksWithPreview = GetTracksWithPreviewUseCase(
+                        SimpleDeezerRepository(DeezerApiImpl()),
+                        urlValidator = AndroidUrlValidator()
+                    ),
                     queueRepository = SimpleListeningQueueRepository(DummyTracksDataSource),
                 ) as T
             } else {
