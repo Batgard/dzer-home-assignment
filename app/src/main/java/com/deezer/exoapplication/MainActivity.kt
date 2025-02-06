@@ -2,6 +2,7 @@ package com.deezer.exoapplication
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -82,6 +83,7 @@ class MainActivity : ComponentActivity() {
                                 val selectedTrack by remember { mutableIntStateOf(state1.currentTrackIndex) }
 
                                 LaunchedEffect(selectedTrack) {
+                                    Log.d("Player", "Scrolling to $selectedTrack")
                                     rowState.scrollToItem(selectedTrack)
                                 }
 
@@ -102,6 +104,7 @@ class MainActivity : ComponentActivity() {
                                             Box(modifier = Modifier.fillMaxSize()) {
                                                 TrackImage(it.coverImageUrl, modifier = Modifier.fillParentMaxSize())
                                                 if (it.readable.not()) {
+                                                    Log.d("Player", "$it has been marked as unplayable")
                                                     Text("Preview can't be played :(")
                                                 }
                                             }

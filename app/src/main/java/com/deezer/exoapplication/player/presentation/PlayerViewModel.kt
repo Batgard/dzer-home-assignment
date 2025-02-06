@@ -1,6 +1,7 @@
 package com.deezer.exoapplication.player.presentation
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.media3.common.MediaItem
@@ -29,16 +30,18 @@ class PlayerViewModel(
     private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
-    private val selectedTrack: MutableStateFlow<Int> = MutableStateFlow(0)
+    private val selectedTrackId: MutableStateFlow<Int> = MutableStateFlow(0)
+    private val unplayableTracks: MutableStateFlow<List<Int>> = MutableStateFlow(emptyList())
     val state: Flow<UiState> = combine(
         queueRepository.getQueue(),
-        selectedTrack,
-    ) { queue, selectedTrackId ->
+        selectedTrackId,
+        unplayableTracks,
+    ) { queue, selectedTrackId, unplayableTracks ->
         if (queue.isEmpty()) {
             UiState.Empty
         } else {
             UiState.Success(
-                queue,
+                queue.map { it.copy(readable = unplayableTracks.contains(it.id).not()) },
                 getSelectedTrackIndex(queue, selectedTrackId),
                 queue.map { it.toMediaItem() },
             )
@@ -66,10 +69,24 @@ class PlayerViewModel(
     fun onPlayerEvent(playerEvent: PlayerEvent) {
         when (playerEvent) {
             is PlayerEvent.Error -> {
-            // TODO: Mark track as not readable and move to the next
+                Log.d("Player", "Error: ${playerEvent.error}")
+                val queue = queueRepository.getQueue().value
+                val selectedTrackId = selectedTrackId.value
+                val indexOfSelectedTrack =
+                    queue.indexOfFirst { it.id == selectedTrackId }
+                if (indexOfSelectedTrack < queue.lastIndex) {
+                    this.selectedTrackId.update {
+                        queue[indexOfSelectedTrack + 1].id
+                    }
+                }
+                unplayableTracks.update { unplayableTracks ->
+                    unplayableTracks + indexOfSelectedTrack
+                }
             }
+
             is PlayerEvent.SelectedTrackChanged -> {
-                selectedTrack.update {
+                Log.d("Player", "SelectedTrackChanged: ${playerEvent.trackId}")
+                selectedTrackId.update {
                     playerEvent.trackId.toInt()
                 }
             }
@@ -99,7 +116,7 @@ class PlayerViewModel(
     }
 
     sealed interface PlayerEvent {
-        data class Error(private val error: PlaybackException) : PlayerEvent
+        data class Error(val error: PlaybackException) : PlayerEvent
         data class SelectedTrackChanged(val trackId: String) : PlayerEvent
     }
 }

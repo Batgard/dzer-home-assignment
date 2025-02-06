@@ -32,7 +32,7 @@ class TrackListViewModel(
                 TrackListState.Initial -> UiState.Loading
                 TrackListState.Empty -> UiState.Empty
                 is TrackListState.Success -> UiState.Success(trackList.tracks.map { track ->
-                    track.toUiModel(queue.contains(track))
+                    track.toUiModel(queue.firstOrNull { it.id == track.id} != null)
                 })
 
                 is TrackListState.Error -> UiState.Error(trackList.message)

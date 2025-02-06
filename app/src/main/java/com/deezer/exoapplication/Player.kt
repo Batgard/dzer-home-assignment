@@ -30,29 +30,27 @@ fun Player(
     val player: ExoPlayer by remember {
         mutableStateOf(
             ExoPlayer.Builder(currentContext).build().apply {
-                Log.d(
-                    "Player",
-                    "Player initialization: $this",
-                )
                 repeatMode = Player.REPEAT_MODE_ALL
                 addListener(
                     object : Player.Listener {
-                    override fun onPlayerError(error: PlaybackException) {
-                        Log.e(
-                            "Player",
-                            "Error: ${error.errorCode} with message: ${error.message}"
-                        )
-                        onPlayerEvent(PlayerViewModel.PlayerEvent.Error(error))
-                    }
+                        override fun onPlayerError(error: PlaybackException) {
+                            onPlayerEvent(PlayerViewModel.PlayerEvent.Error(error))
+                        }
 
                         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                        Log.d(
-                            "Player",
-                            "Media item transition: $mediaItem for reason $reason"
-                        )
-                            onPlayerEvent(PlayerViewModel.PlayerEvent.SelectedTrackChanged(mediaItem?.mediaId ?: throw IllegalArgumentException("mediaId cannot be null")))
+                            Log.d("Player", "onMediaItemTransition. MediaItem ID == ${mediaItem?.mediaId} for reason $reason")
+                            onPlayerEvent(
+                                PlayerViewModel.PlayerEvent.SelectedTrackChanged(
+                                    mediaItem?.mediaId
+                                        ?: throw IllegalArgumentException("mediaId cannot be null")
+                                )
+                            )
+                        }
+
+                        override fun onEvents(player: Player, events: Player.Events) {
+                            super.onEvents(player, events)
+                        }
                     }
-                }
                 )
                 if (state is PlayerViewModel.UiState.Success) {
                     setMediaItems(state.mediaItems)
@@ -75,6 +73,7 @@ fun Player(
         update = {
             if (state is PlayerViewModel.UiState.Success) {
                 player.setMediaItems(state.mediaItems)
+                player.seekTo(state.currentTrackIndex, 0L)
                 player.prepare()
                 player.play()
             }
