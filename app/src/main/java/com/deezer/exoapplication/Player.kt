@@ -24,7 +24,6 @@ fun Player(
     onPlayerEvent: (PlayerViewModel.PlayerEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-
     val currentContext = LocalContext.current
 
     val player: ExoPlayer by remember {

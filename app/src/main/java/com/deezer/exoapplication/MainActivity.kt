@@ -1,6 +1,7 @@
 package com.deezer.exoapplication
 
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -109,13 +112,24 @@ private fun MainScreen(
 
                     Spacer(modifier = Modifier.height(Size.Spacing.Large))
 
-                    Player(
-                        state = state,
-                        onPlayerEvent = onPlayerEvent,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                    )
+                    if (LocalInspectionMode.current.not()) {
+                        Player(
+                            state = state,
+                            onPlayerEvent = onPlayerEvent,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(fraction = 0.3f)
+                        )
+                    } else {
+                        Text(
+                            text = "PLAYER VIEW",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .background(MaterialTheme.colorScheme.tertiary),
+                            color = MaterialTheme.colorScheme.onTertiary,
+                        )
+                    }
                 }
 
                 GoToTrackListButton()
@@ -165,7 +179,11 @@ private fun TrackQueue(
             val configuration = LocalConfiguration.current
             val cardWidth: Dp by remember {
                 derivedStateOf {
-                    (configuration.screenWidthDp.toFloat() * 0.8).dp
+                    when (configuration.orientation) {
+                        Configuration.ORIENTATION_LANDSCAPE -> (configuration.screenHeightDp.toFloat() * 0.4).dp
+                        Configuration.ORIENTATION_PORTRAIT -> (configuration.screenWidthDp.toFloat() * 0.8).dp
+                        else -> 200.dp // unknown config, hard code the size
+                    }
                 }
             }
 
@@ -251,57 +269,67 @@ private fun TrackCard(
 @Composable
 fun MainScreenEmptyPreview() {
     ExoAppTheme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Player(
-                state = PlayerViewModel.UiState.Empty,
-                onPlayerEvent = {},
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .padding(innerPadding)
-            )
-        }
+        MainScreen(
+            state = PlayerViewModel.UiState.Empty,
+            onPlayerEvent = {},
+            onQueueEvent = {},
+        )
     }
 }
 
 @Preview
 @Composable
 fun MainScreenWithTracksPreview() {
+
     ExoAppTheme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            Player(
-                state = PlayerViewModel.UiState.Success(
-                    tracks = listOf(
-                        Track(
-                            id = 42,
-                            title = "Show must go on",
-                            durationInSeconds = 180,
-                            coverImageUrl = "https://images.fineartamerica.com/images/artworkimages/mediumlarge/2/show-must-go-on-queen-gina-dsgn.jpg",
-                            artistName = "Queen",
-                            albumTitle = "The Game",
-                            readable = true,
-                            previewUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-                        ),
-                        Track(
-                            id = 88,
-                            title = "There'd Better Be a Mirrorball",
-                            durationInSeconds = 180,
-                            coverImageUrl = "https://i.pinimg.com/736x/ec/e2/56/ece256ac6c6a40fd8fb0e2894848c66a.jpg",
-                            artistName = "Arctic Monkeys",
-                            albumTitle = "The car",
-                            readable = true,
-                            previewUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-                        ),
-                    ),
-                    currentTrackIndex = 0,
-                    mediaItems = emptyList()
-                ),
-                onPlayerEvent = {},
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .padding(innerPadding)
-            )
-        }
+        MainScreen(
+            state = PlayerViewModel.UiState.Success(
+                tracks = tracks,
+                currentTrackIndex = 0,
+                mediaItems = emptyList()
+            ),
+            onPlayerEvent = {},
+            onQueueEvent = {}
+        )
     }
 }
+
+@Preview(widthDp = 900, heightDp = 400)
+@Composable
+fun MainScreenWithTracksLandscapePreview() {
+
+    ExoAppTheme {
+        MainScreen(
+            state = PlayerViewModel.UiState.Success(
+                tracks = tracks,
+                currentTrackIndex = 0,
+                mediaItems = emptyList()
+            ),
+            onPlayerEvent = {},
+            onQueueEvent = {}
+        )
+    }
+}
+
+private val tracks = listOf(
+    Track(
+        id = 42,
+        title = "Show must go on",
+        durationInSeconds = 180,
+        coverImageUrl = "https://images.fineartamerica.com/images/artworkimages/mediumlarge/2/show-must-go-on-queen-gina-dsgn.jpg",
+        artistName = "Queen",
+        albumTitle = "The Game",
+        readable = true,
+        previewUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    ),
+    Track(
+        id = 88,
+        title = "There'd Better Be a Mirrorball",
+        durationInSeconds = 180,
+        coverImageUrl = "https://i.pinimg.com/736x/ec/e2/56/ece256ac6c6a40fd8fb0e2894848c66a.jpg",
+        artistName = "Arctic Monkeys",
+        albumTitle = "The car",
+        readable = true,
+        previewUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+    ),
+)
