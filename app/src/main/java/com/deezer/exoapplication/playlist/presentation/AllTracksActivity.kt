@@ -19,14 +19,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -50,29 +54,60 @@ class AllTracksActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle(TrackListViewModel.UiState.Loading)
-            ExoAppTheme {
-                Scaffold { contentPadding ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(contentPadding),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Log.d("State", "$state")
-                        when (state) {
-                            TrackListViewModel.UiState.Loading -> LoadingScreen()
-                            TrackListViewModel.UiState.Empty -> EmptyScreen()
-                            is TrackListViewModel.UiState.Error -> ErrorScreen()
-                            is TrackListViewModel.UiState.Success -> TrackListScreen(
-                                trackList = (state as TrackListViewModel.UiState.Success).tracks,
-                                onTrackClick = {
-                                    viewModel.onTrackClick(it)
-                                },
-                            )
-                        }
-                    }
+            TrackSelectionScreen(
+                state = state,
+                onTrackClick = viewModel::onTrackClick,
+                onUpNavClick = { onBackPressedDispatcher.onBackPressed() }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TrackSelectionScreen(
+    state: TrackListViewModel.UiState,
+    onTrackClick: (Int) -> Unit,
+    onUpNavClick: () -> Unit,
+) {
+    ExoAppTheme {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Add tracks to queue") },
+                    navigationIcon = {
+                        Icon(
+                            painter = rememberVectorPainter(image = Icons.AutoMirrored.Filled.ArrowBack),
+                            contentDescription = "Back to main screen",
+                            modifier = Modifier
+                                .size(Size.Icon.Medium)
+                                .clickable {
+                                    onUpNavClick()
+                                }
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                )
+            }
+        ) { contentPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Log.d("State", "$state")
+                when (state) {
+                    TrackListViewModel.UiState.Loading -> LoadingScreen()
+                    TrackListViewModel.UiState.Empty -> EmptyScreen()
+                    is TrackListViewModel.UiState.Error -> ErrorScreen()
+                    is TrackListViewModel.UiState.Success -> TrackListScreen(
+                        trackList = state.tracks,
+                        onTrackClick = onTrackClick,
+                    )
                 }
             }
         }
@@ -130,7 +165,10 @@ fun TrackItem(
         ) {
             TrackImage(track.coverImageUrl)
             Spacer(modifier = Modifier.width(Size.Spacing.Medium))
-            TrackInfo(track)
+            TrackInfo(
+                track,
+                modifier = Modifier.fillMaxWidth(fraction = 0.8f)
+            )
             Spacer(modifier = Modifier.width(Size.Spacing.Medium))
             Box(
                 modifier = Modifier.weight(1f),
@@ -164,8 +202,11 @@ fun TrackImage(imageUrl: String, modifier: Modifier = Modifier.size(Size.Image.M
 }
 
 @Composable
-fun TrackInfo(track: TrackListViewModel.TrackUiModel) {
-    Column {
+fun TrackInfo(
+    track: TrackListViewModel.TrackUiModel,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
         Text(
             text = track.title,
             style = MaterialTheme.typography.bodyLarge,
@@ -204,15 +245,52 @@ fun LoadingScreenPreview() {
 fun TrackItemPreview() {
     ExoAppTheme {
         TrackItem(
-            track = TrackListViewModel.TrackUiModel(
-                id = 1,
-                title = "Track Title",
-                durationInSeconds = 180,
-                coverImageUrl = "https://example.com/cover.jpg",
-                artistName = "Artist Name",
-                albumTitle = "Album Title",
-            ),
+            track = genericTrackUiModel,
             onTrackClick = {}
         )
     }
 }
+
+@Preview
+@Composable
+fun TrackItemWithVeryLongTitlePreview() {
+
+    ExoAppTheme {
+        TrackItem(
+            track = trackUiModel,
+            onTrackClick = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+fun TrackListScreenPreview() {
+    TrackSelectionScreen(
+        state = TrackListViewModel.UiState.Success(
+            tracks = listOf(
+                trackUiModel,
+                genericTrackUiModel,
+            ),
+        ),
+        onTrackClick = {},
+        onUpNavClick = {},
+    )
+}
+
+private val genericTrackUiModel = TrackListViewModel.TrackUiModel(
+    id = 1,
+    title = "Track Title",
+    durationInSeconds = 180,
+    coverImageUrl = "https://example.com/cover.jpg",
+    artistName = "Artist Name",
+    albumTitle = "Album Title",
+)
+private val trackUiModel = TrackListViewModel.TrackUiModel(
+    id = 1,
+    title = "My Cosmic Autumn Rebellion (The Inner Life as Blazing Shield of Defiance and Optimism as Celestial Spear of Action)",
+    durationInSeconds = 180,
+    coverImageUrl = "https://example.com/cover.jpg",
+    artistName = "The Flaming Lips",
+    albumTitle = "The Flaming Lips",
+)
