@@ -48,12 +48,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import com.deezer.exoapplication.player.presentation.PlayerViewModel
+import com.deezer.exoapplication.playlist.domain.Track
 import com.deezer.exoapplication.playlist.presentation.AllTracksActivity
 import com.deezer.exoapplication.playlist.presentation.TrackImage
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
@@ -70,135 +72,174 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val state by viewModel.state.collectAsStateWithLifecycle(PlayerViewModel.UiState.Empty)
-            ExoAppTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Box(
+            MainScreen(
+                state = state,
+                onPlayerEvent = viewModel::onPlayerEvent,
+                onQueueEvent = viewModel::onQueueEvent
+            )
+        }
+    }
+
+
+}
+
+@Composable
+private fun MainScreen(
+    state: PlayerViewModel.UiState,
+    onPlayerEvent: (PlayerViewModel.PlayerEvent) -> Unit,
+    onQueueEvent: (PlayerViewModel.QueueEvent) -> Unit
+) {
+    ExoAppTheme {
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding(),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    verticalArrangement = Arrangement.Bottom
+                ) {
+                    (state as? PlayerViewModel.UiState.Success)?.let { successState ->
+                        TrackQueue(successState, onQueueEvent)
+                    }
+
+                    Spacer(modifier = Modifier.height(Size.Spacing.Large))
+
+                    Player(
+                        state = state,
+                        onPlayerEvent = onPlayerEvent,
                         modifier = Modifier
-                            .fillMaxSize()
-                            .statusBarsPadding(),
-                        contentAlignment = Alignment.TopEnd
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding),
-                            verticalArrangement = Arrangement.Bottom
-                        ) {
-                            (state as? PlayerViewModel.UiState.Success)?.let { successState ->
-                                val rowState = rememberLazyListState()
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    )
+                }
 
-                                LaunchedEffect(successState.currentTrackIndex) {
-                                    Log.d("Player", "Scrolling to ${successState.currentTrackIndex}")
-                                    rowState.scrollToItem(successState.currentTrackIndex)
-                                }
+                GoToTrackListButton()
+            }
+        }
+    }
+}
 
-                                LazyRow(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    state = rowState
-                                ) {
-                                    items(successState.tracks) {
-                                        val configuration = LocalConfiguration.current
-                                        val cardWidth: Dp by remember {
-                                            derivedStateOf {
-                                                (configuration.screenWidthDp.toFloat() * 0.8).dp
-                                            }
-                                        }
+@Composable
+private fun GoToTrackListButton() {
+    val context = LocalContext.current
+    FloatingActionButton(
+        onClick = {
+            context.startActivity(Intent(context, AllTracksActivity::class.java))
+        },
+        modifier = Modifier
+            .wrapContentSize()
+            .padding(Size.Spacing.Large)
+    ) {
+        Icon(
+            painter = rememberVectorPainter(Icons.Default.Add),
+            contentDescription = "All tracks to queue"
+        )
+    }
+}
 
-                                        Card(
-                                            modifier = Modifier
-                                                .width(cardWidth)
-                                                .aspectRatio(1f)
-                                        ) {
-                                            Box(modifier = Modifier
-                                                .fillMaxSize()
-                                                .clickable {
-                                                    viewModel.onQueueEvent(
-                                                        PlayerViewModel.QueueEvent.TrackSelected(
-                                                            it.id
-                                                        )
-                                                    )
-                                                }) {
-                                                TrackImage(
-                                                    it.coverImageUrl,
-                                                    modifier = Modifier.fillParentMaxSize()
-                                                )
-                                                Row(modifier = Modifier.fillMaxWidth()) {
+@Composable
+private fun TrackQueue(
+    successState: PlayerViewModel.UiState.Success,
+    onQueueEvent: (PlayerViewModel.QueueEvent) -> Unit
+) {
+    val rowState = rememberLazyListState()
 
-                                                    if (it.readable.not()) {
-                                                        Log.d(
-                                                            "Player",
-                                                            "$it has been marked as unplayable"
-                                                        )
-                                                        Text(
-                                                            "Preview can't be played :(",
-                                                            Modifier.background(
-                                                                MaterialTheme.colorScheme.background
-                                                            )
-                                                        )
-                                                    }
-                                                    Spacer(modifier = Modifier.width(Size.Spacing.Medium))
-                                                    Box(
-                                                        modifier = Modifier.weight(1f),
-                                                        contentAlignment = Alignment.TopEnd
-                                                    ) {
-                                                        Button(
-                                                            onClick = {
-                                                                viewModel.onQueueEvent(
-                                                                    PlayerViewModel.QueueEvent.TrackRemovalRequest(
-                                                                        it.id
-                                                                    )
-                                                                )
-                                                            },
-                                                            modifier = Modifier.size(Size.Button.Medium),
-                                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
-                                                            shape = RoundedCornerShape(bottomStart = 8.dp),
-                                                        ) {
-                                                            Icon(
-                                                                painter = rememberVectorPainter(
-                                                                    Icons.Default.Close
-                                                                ),
-                                                                modifier = Modifier.size(Size.Icon.Large),
-                                                                contentDescription = "Remove from queue"
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.width(Size.Spacing.Medium))
-                                    }
-                                }
+    LaunchedEffect(successState.currentTrackIndex) {
+        Log.d(
+            "Player",
+            "Scrolling to ${successState.currentTrackIndex}"
+        )
+        rowState.scrollToItem(successState.currentTrackIndex)
+    }
 
-                            }
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        state = rowState
+    ) {
+        items(successState.tracks) {
+            val configuration = LocalConfiguration.current
+            val cardWidth: Dp by remember {
+                derivedStateOf {
+                    (configuration.screenWidthDp.toFloat() * 0.8).dp
+                }
+            }
 
-                            Spacer(modifier = Modifier.height(Size.Spacing.Large))
+            TrackCard(
+                track = it,
+                onQueueEvent = onQueueEvent,
+                modifier = Modifier.width(cardWidth)
+            )
+            Spacer(modifier = Modifier.width(Size.Spacing.Medium))
+        }
+    }
+}
 
-                            Player(
-                                state = state,
-                                onPlayerEvent = viewModel::onPlayerEvent,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp)
-                            )
-                        }
-                        FloatingActionButton(
-                            onClick = {
-                                startActivity(
-                                    Intent(
-                                        this@MainActivity,
-                                        AllTracksActivity::class.java
-                                    )
+@Composable
+private fun TrackCard(
+    track: Track,
+    onQueueEvent: (PlayerViewModel.QueueEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .aspectRatio(1f)
+    ) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .clickable {
+                onQueueEvent(
+                    PlayerViewModel.QueueEvent.TrackSelected(
+                        track.id
+                    )
+                )
+            }) {
+            TrackImage(
+                track.coverImageUrl,
+                modifier = Modifier.fillMaxSize()
+            )
+            Row(modifier = Modifier.fillMaxWidth()) {
+
+                if (track.readable.not()) {
+                    Log.d(
+                        "Player",
+                        "$track has been marked as unplayable"
+                    )
+                    Text(
+                        "Preview can't be played :(",
+                        Modifier.background(
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                }
+                Spacer(modifier = Modifier.width(Size.Spacing.Medium))
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    Button(
+                        onClick = {
+                            onQueueEvent(
+                                PlayerViewModel.QueueEvent.TrackRemovalRequest(
+                                    track.id
                                 )
-                            },
-                            modifier = Modifier
-                                .wrapContentSize()
-                                .padding(Size.Spacing.Large)
-                        ) {
-                            Icon(
-                                painter = rememberVectorPainter(Icons.Default.Add),
-                                contentDescription = "All tracks to queue"
                             )
-                        }
+                        },
+                        modifier = Modifier.size(Size.Button.Medium),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
+                        shape = RoundedCornerShape(bottomStart = 8.dp),
+                    ) {
+                        Icon(
+                            painter = rememberVectorPainter(
+                                Icons.Default.Close
+                            ),
+                            modifier = Modifier.size(Size.Icon.Large),
+                            contentDescription = "Remove from queue"
+                        )
                     }
                 }
             }
@@ -208,11 +249,53 @@ class MainActivity : ComponentActivity() {
 
 @Preview
 @Composable
-fun MainScreenPreview() {
+fun MainScreenEmptyPreview() {
     ExoAppTheme {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             Player(
                 state = PlayerViewModel.UiState.Empty,
+                onPlayerEvent = {},
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .padding(innerPadding)
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+fun MainScreenWithTracksPreview() {
+    ExoAppTheme {
+        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            Player(
+                state = PlayerViewModel.UiState.Success(
+                    tracks = listOf(
+                        Track(
+                            id = 42,
+                            title = "Show must go on",
+                            durationInSeconds = 180,
+                            coverImageUrl = "https://images.fineartamerica.com/images/artworkimages/mediumlarge/2/show-must-go-on-queen-gina-dsgn.jpg",
+                            artistName = "Queen",
+                            albumTitle = "The Game",
+                            readable = true,
+                            previewUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+                        ),
+                        Track(
+                            id = 88,
+                            title = "There'd Better Be a Mirrorball",
+                            durationInSeconds = 180,
+                            coverImageUrl = "https://i.pinimg.com/736x/ec/e2/56/ece256ac6c6a40fd8fb0e2894848c66a.jpg",
+                            artistName = "Arctic Monkeys",
+                            albumTitle = "The car",
+                            readable = true,
+                            previewUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+                        ),
+                    ),
+                    currentTrackIndex = 0,
+                    mediaItems = emptyList()
+                ),
                 onPlayerEvent = {},
                 modifier = Modifier
                     .fillMaxWidth()
