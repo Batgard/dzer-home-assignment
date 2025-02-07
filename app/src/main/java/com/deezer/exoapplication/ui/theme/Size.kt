@@ -14,4 +14,17 @@ object Size {
         val Medium = 64.dp
         val Large = 128.dp
     }
+
+    object Icon {
+        val Small = 16.dp
+        val Medium = 24.dp
+        val Large = 32.dp
+    }
+
+    object Button {
+        val Small = 48.dp
+        val Medium = 64.dp
+        val Large = 96.dp
+
+    }
 }

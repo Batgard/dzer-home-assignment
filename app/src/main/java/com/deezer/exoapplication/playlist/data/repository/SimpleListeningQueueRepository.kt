@@ -19,11 +19,11 @@ class SimpleListeningQueueRepository(private val dataSource: TracksDataSource) :
         return Result.success(Unit)
     }
 
-    override suspend fun removeTrackFromQueue(track: Track): Result<Unit> {
-        return if (dataSource.removeTrack(track)) {
+    override suspend fun removeTrackFromQueue(trackId: Int): Result<Unit> {
+        return if (dataSource.removeTrack(trackId)) {
             Result.success(Unit)
         } else {
-            Result.failure(NotFoundException("Track ${track.title} not found in queue"))
+            Result.failure(NotFoundException("Track $trackId not found in queue"))
         }
     }
 }
@@ -31,7 +31,7 @@ class SimpleListeningQueueRepository(private val dataSource: TracksDataSource) :
 interface TracksDataSource {
     fun getTracks(): StateFlow<List<Track>>
     suspend fun addTrack(track: Track)
-    suspend fun removeTrack(track: Track): Boolean
+    suspend fun removeTrack(trackId: Int): Boolean
 }
 
 object DummyTracksDataSource : TracksDataSource { // TODO: Store IDs in database and files on disk
@@ -48,9 +48,9 @@ object DummyTracksDataSource : TracksDataSource { // TODO: Store IDs in database
         }
     }
 
-    override suspend fun removeTrack(track: Track): Boolean {
-        tracksFlow.update {
-            it - track
+    override suspend fun removeTrack(trackId: Int): Boolean {
+        tracksFlow.update { tracks ->
+            tracks.filterNot { it.id == trackId }
         }
         return true
     }

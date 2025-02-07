@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * What it should do?
@@ -71,27 +73,58 @@ class PlayerViewModel(
     fun onPlayerEvent(playerEvent: PlayerEvent) {
         when (playerEvent) {
             is PlayerEvent.Error -> {
-                Log.d("Player", "Error: ${playerEvent.error}")
-                val queue = queueRepository.getQueue().value
-                val selectedTrackId = selectedTrackId.value
-                val indexOfSelectedTrack =
-                    queue.indexOfFirst { it.id == selectedTrackId }
-                if (indexOfSelectedTrack < queue.lastIndex) {
-                    this.selectedTrackId.update {
-                        queue[indexOfSelectedTrack + 1].id
-                    }
-                }
-                unplayableTracks.update { unplayableTracks ->
-                    unplayableTracks + indexOfSelectedTrack
-                }
+                handlePlayerError(playerEvent)
             }
 
             is PlayerEvent.SelectedTrackChanged -> {
-                Log.d("Player", "SelectedTrackChanged: ${playerEvent.trackId}")
-                selectedTrackId.update {
-                    playerEvent.trackId.toInt()
-                }
+                handleSelectedTrackChange(playerEvent)
             }
+        }
+    }
+
+    fun onQueueEvent(queueEvent: QueueEvent) {
+        when (queueEvent) {
+            is QueueEvent.TrackRemovalRequest -> {
+                handleTrackRemovalRequest(queueEvent)
+            }
+            is QueueEvent.TrackSelected -> {
+                handleTrackSelected(queueEvent)
+            }
+        }
+    }
+
+    private fun handleTrackRemovalRequest(queueEvent: QueueEvent.TrackRemovalRequest) {
+        viewModelScope.launch(coroutineDispatcher) {
+            queueRepository.removeTrackFromQueue(queueEvent.trackId)
+        }
+    }
+
+    private fun handleTrackSelected(queueEvent: QueueEvent.TrackSelected) {
+        selectedTrackId.update {
+            queueEvent.trackId // FIXME: Double check if that's enough
+        }
+    }
+
+    private fun handleSelectedTrackChange(playerEvent: PlayerEvent.SelectedTrackChanged) {
+        Log.d("Player", "SelectedTrackChanged: ${playerEvent.trackId}")
+        selectedTrackId.update {
+            playerEvent.trackId.toInt()
+        }
+    }
+
+    private fun handlePlayerError(playerEvent: PlayerEvent.Error) {
+        Log.d("Player", "Error: ${playerEvent.error}")
+        val queue = queueRepository.getQueue().value
+        val selectedTrackId = selectedTrackId.value
+        val indexOfSelectedTrack =
+            queue.indexOfFirst { it.id == selectedTrackId }
+        if (indexOfSelectedTrack < queue.lastIndex) {
+            this.selectedTrackId.update {
+                queue[indexOfSelectedTrack + 1].id
+            }
+        }
+        unplayableTracks.update { unplayableTracks ->
+            unplayableTracks + selectedTrackId
         }
     }
 
@@ -120,5 +153,10 @@ class PlayerViewModel(
     sealed interface PlayerEvent {
         data class Error(val error: PlaybackException) : PlayerEvent
         data class SelectedTrackChanged(val trackId: String) : PlayerEvent
+    }
+
+    sealed interface QueueEvent {
+        data class TrackSelected(val trackId: Int) : QueueEvent
+        data class TrackRemovalRequest(val trackId: Int) : QueueEvent
     }
 }

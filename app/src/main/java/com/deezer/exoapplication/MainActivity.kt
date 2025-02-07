@@ -8,26 +8,35 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -75,19 +84,19 @@ class MainActivity : ComponentActivity() {
                                 .padding(innerPadding),
                             verticalArrangement = Arrangement.Bottom
                         ) {
-                            (state as? PlayerViewModel.UiState.Success)?.let { state1 ->
+                            (state as? PlayerViewModel.UiState.Success)?.let { successState ->
                                 val rowState = rememberLazyListState()
 
-                                LaunchedEffect(state1.currentTrackIndex) {
-                                    Log.d("Player", "Scrolling to ${state1.currentTrackIndex}")
-                                    rowState.scrollToItem(state1.currentTrackIndex)
+                                LaunchedEffect(successState.currentTrackIndex) {
+                                    Log.d("Player", "Scrolling to ${successState.currentTrackIndex}")
+                                    rowState.scrollToItem(successState.currentTrackIndex)
                                 }
 
                                 LazyRow(
                                     modifier = Modifier.fillMaxWidth(),
                                     state = rowState
                                 ) {
-                                    items((state as PlayerViewModel.UiState.Success).tracks) {
+                                    items(successState.tracks) {
                                         val configuration = LocalConfiguration.current
                                         val cardWidth: Dp by remember {
                                             derivedStateOf {
@@ -100,17 +109,59 @@ class MainActivity : ComponentActivity() {
                                                 .width(cardWidth)
                                                 .aspectRatio(1f)
                                         ) {
-                                            Box(modifier = Modifier.fillMaxSize()) {
+                                            Box(modifier = Modifier
+                                                .fillMaxSize()
+                                                .clickable {
+                                                    viewModel.onQueueEvent(
+                                                        PlayerViewModel.QueueEvent.TrackSelected(
+                                                            it.id
+                                                        )
+                                                    )
+                                                }) {
                                                 TrackImage(
                                                     it.coverImageUrl,
                                                     modifier = Modifier.fillParentMaxSize()
                                                 )
-                                                if (it.readable.not()) {
-                                                    Log.d(
-                                                        "Player",
-                                                        "$it has been marked as unplayable"
-                                                    )
-                                                    Text("Preview can't be played :(")
+                                                Row(modifier = Modifier.fillMaxWidth()) {
+
+                                                    if (it.readable.not()) {
+                                                        Log.d(
+                                                            "Player",
+                                                            "$it has been marked as unplayable"
+                                                        )
+                                                        Text(
+                                                            "Preview can't be played :(",
+                                                            Modifier.background(
+                                                                MaterialTheme.colorScheme.background
+                                                            )
+                                                        )
+                                                    }
+                                                    Spacer(modifier = Modifier.width(Size.Spacing.Medium))
+                                                    Box(
+                                                        modifier = Modifier.weight(1f),
+                                                        contentAlignment = Alignment.TopEnd
+                                                    ) {
+                                                        Button(
+                                                            onClick = {
+                                                                viewModel.onQueueEvent(
+                                                                    PlayerViewModel.QueueEvent.TrackRemovalRequest(
+                                                                        it.id
+                                                                    )
+                                                                )
+                                                            },
+                                                            modifier = Modifier.size(Size.Button.Medium),
+                                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary),
+                                                            shape = RoundedCornerShape(bottomStart = 8.dp),
+                                                        ) {
+                                                            Icon(
+                                                                painter = rememberVectorPainter(
+                                                                    Icons.Default.Close
+                                                                ),
+                                                                modifier = Modifier.size(Size.Icon.Large),
+                                                                contentDescription = "Remove from queue"
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }

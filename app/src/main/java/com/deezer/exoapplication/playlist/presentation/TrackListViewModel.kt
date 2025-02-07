@@ -59,7 +59,7 @@ class TrackListViewModel(
                 (trackListState.value as? TrackListState.Success)?.tracks?.find { it.id == trackId }
                     ?: throw IllegalArgumentException("Track not found") // TODO: Just show a toaster with an error message and log the issue to the monitoring tool (Crashlytics or something else)
             if (queueRepository.getQueue().value.contains(track)) {
-                queueRepository.removeTrackFromQueue(track)
+                queueRepository.removeTrackFromQueue(track.id)
             } else {
                 queueRepository.addTrackToQueue(track)
             }
