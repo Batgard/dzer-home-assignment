@@ -1,7 +1,6 @@
 package com.deezer.exoapplication.player.presentation
 
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -27,12 +26,13 @@ import kotlinx.coroutines.launch
  * Provide player with the next track URL to play when the current one ends (maybe even buffer it already)
  * Provide it with the rest of the information (album cover, artist name, track title)?
  */
-class PlayerViewModel(
+class MainScreenViewModel(
     private val queueRepository: ListeningQueueRepository,
+    private val trackToMediaItemMapper: TrackToMediaItemMapper,
     private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
 
-    private val selectedTrackId: MutableStateFlow<Int> = MutableStateFlow(0)
+    private val selectedTrackId: MutableStateFlow<Int> = MutableStateFlow(NO_TRACK_SELECTED)
     private val unplayableTracks: MutableStateFlow<List<Int>> = MutableStateFlow(emptyList())
     val state: Flow<UiState> = combine(
         queueRepository.getQueue(),
@@ -42,33 +42,26 @@ class PlayerViewModel(
         if (queue.isEmpty()) {
             UiState.Empty
         } else {
+            if (isThereASelectedTrack(selectedTrackId)) {
+                this.selectedTrackId.update {
+                    queue.first().id
+                }
+            }
             UiState.Success(
                 queue.map { it.copy(readable = unplayableTracks.contains(it.id).not()) },
                 getSelectedTrackIndex(queue, selectedTrackId),
-                queue.map { it.toMediaItem() },
+                queue.map { trackToMediaItemMapper.mapTrackToMediaItem(it) },
             )
         }
     }
 
+    private fun isThereASelectedTrack(selectedTrackId: Int) = selectedTrackId == NO_TRACK_SELECTED
+
 
     private fun getSelectedTrackIndex(queue: List<Track>, trackId: Int): Int {
         val indexOfFirst = queue.indexOfFirst { it.id == trackId }
-        Log.d("Player", "getSelectedTrackIndex: ${indexOfFirst}")
-        return indexOfFirst.coerceAtLeast(0)
+        return indexOfFirst.coerceAtLeast(DEFAULT_SELECTED_TRACK_INDEX)
     }
-
-
-    private fun Track.toMediaItem(): MediaItem = MediaItem.Builder()
-        .setUri(previewUrl)
-        .setMediaId(id.toString())
-        .setMediaMetadata(
-            MediaMetadata.Builder()
-                .setTitle(title)
-                .setArtist(artistName)
-                .setArtworkUri(Uri.parse(coverImageUrl)) // Album art
-                .build()
-        )
-        .build()
 
     fun onPlayerEvent(playerEvent: PlayerEvent) {
         when (playerEvent) {
@@ -87,6 +80,7 @@ class PlayerViewModel(
             is QueueEvent.TrackRemovalRequest -> {
                 handleTrackRemovalRequest(queueEvent)
             }
+
             is QueueEvent.TrackSelected -> {
                 handleTrackSelected(queueEvent)
             }
@@ -101,23 +95,21 @@ class PlayerViewModel(
 
     private fun handleTrackSelected(queueEvent: QueueEvent.TrackSelected) {
         selectedTrackId.update {
-            queueEvent.trackId // FIXME: Double check if that's enough
+            queueEvent.trackId
         }
     }
 
     private fun handleSelectedTrackChange(playerEvent: PlayerEvent.SelectedTrackChanged) {
-        Log.d("Player", "SelectedTrackChanged: ${playerEvent.trackId}")
         selectedTrackId.update {
             playerEvent.trackId.toInt()
         }
     }
 
     private fun handlePlayerError(playerEvent: PlayerEvent.Error) {
-        Log.d("Player", "Error: ${playerEvent.error}")
+        //TODO: Do something with the playerEvent
         val queue = queueRepository.getQueue().value
         val selectedTrackId = selectedTrackId.value
-        val indexOfSelectedTrack =
-            queue.indexOfFirst { it.id == selectedTrackId }
+        val indexOfSelectedTrack = getSelectedTrackIndex(queue, selectedTrackId)
         if (indexOfSelectedTrack < queue.lastIndex) {
             this.selectedTrackId.update {
                 queue[indexOfSelectedTrack + 1].id
@@ -128,12 +120,18 @@ class PlayerViewModel(
         }
     }
 
+    companion object {
+        const val NO_TRACK_SELECTED = -1
+        const val DEFAULT_SELECTED_TRACK_INDEX = 0
+    }
+
     object Factory : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(PlayerViewModel::class.java)) {
-                return PlayerViewModel(
+            if (modelClass.isAssignableFrom(MainScreenViewModel::class.java)) {
+                return MainScreenViewModel(
                     queueRepository = SimpleListeningQueueRepository(DummyTracksDataSource),
+                    trackToMediaItemMapper = TrackToMediaItemMapperImpl(),
                 ) as T
             } else {
                 throw IllegalArgumentException("Unknown ViewModel class $modelClass")
@@ -145,7 +143,7 @@ class PlayerViewModel(
         object Empty : UiState
         data class Success(
             val tracks: List<Track>,
-            val currentTrackIndex: Int = 0,
+            val currentTrackIndex: Int = DEFAULT_SELECTED_TRACK_INDEX,
             val mediaItems: List<MediaItem>
         ) : UiState
     }
@@ -158,5 +156,27 @@ class PlayerViewModel(
     sealed interface QueueEvent {
         data class TrackSelected(val trackId: Int) : QueueEvent
         data class TrackRemovalRequest(val trackId: Int) : QueueEvent
+    }
+}
+
+
+interface TrackToMediaItemMapper {
+    fun mapTrackToMediaItem(track: Track): MediaItem
+}
+
+class TrackToMediaItemMapperImpl : TrackToMediaItemMapper {
+    override fun mapTrackToMediaItem(track: Track): MediaItem = with(track) {
+        MediaItem.Builder()
+            .setUri(previewUrl)
+            .setMediaId(id.toString())
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(title)
+                    .setArtist(artistName)
+                    .setArtworkUri(Uri.parse(coverImageUrl))
+                    .build()
+            )
+            .build()
+
     }
 }

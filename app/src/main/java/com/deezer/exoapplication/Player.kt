@@ -15,13 +15,13 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import com.deezer.exoapplication.player.presentation.PlayerViewModel
+import com.deezer.exoapplication.player.presentation.MainScreenViewModel
 
 @OptIn(UnstableApi::class)
 @Composable
 fun Player(
-    state: PlayerViewModel.UiState,
-    onPlayerEvent: (PlayerViewModel.PlayerEvent) -> Unit,
+    state: MainScreenViewModel.UiState,
+    onPlayerEvent: (MainScreenViewModel.PlayerEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val currentContext = LocalContext.current
@@ -33,13 +33,13 @@ fun Player(
                 addListener(
                     object : Player.Listener {
                         override fun onPlayerError(error: PlaybackException) {
-                            onPlayerEvent(PlayerViewModel.PlayerEvent.Error(error))
+                            onPlayerEvent(MainScreenViewModel.PlayerEvent.Error(error))
                         }
 
                         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                             Log.d("Player", "onMediaItemTransition. MediaItem ID == ${mediaItem?.mediaId} for reason $reason")
                             onPlayerEvent(
-                                PlayerViewModel.PlayerEvent.SelectedTrackChanged(
+                                MainScreenViewModel.PlayerEvent.SelectedTrackChanged(
                                     mediaItem?.mediaId
                                         ?: throw IllegalArgumentException("mediaId cannot be null")
                                 )
@@ -51,7 +51,7 @@ fun Player(
                         }
                     }
                 )
-                if (state is PlayerViewModel.UiState.Success) {
+                if (state is MainScreenViewModel.UiState.Success) {
                     setMediaItems(state.mediaItems)
                     prepare()
                     play()
@@ -70,7 +70,7 @@ fun Player(
             }
         },
         update = {
-            if (state is PlayerViewModel.UiState.Success) {
+            if (state is MainScreenViewModel.UiState.Success) {
                 player.setMediaItems(state.mediaItems)
                 player.seekTo(state.currentTrackIndex, 0L)
                 player.prepare()

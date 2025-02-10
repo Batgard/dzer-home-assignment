@@ -57,7 +57,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
-import com.deezer.exoapplication.player.presentation.PlayerViewModel
+import com.deezer.exoapplication.player.presentation.MainScreenViewModel
 import com.deezer.exoapplication.playlist.domain.Track
 import com.deezer.exoapplication.playlist.presentation.AllTracksActivity
 import com.deezer.exoapplication.playlist.presentation.TrackImage
@@ -67,14 +67,14 @@ import com.deezer.exoapplication.ui.theme.Size
 @UnstableApi
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: PlayerViewModel by viewModels { PlayerViewModel.Factory }
+    private val viewModel: MainScreenViewModel by viewModels { MainScreenViewModel.Factory }
 
     @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val state by viewModel.state.collectAsStateWithLifecycle(PlayerViewModel.UiState.Empty)
+            val state by viewModel.state.collectAsStateWithLifecycle(MainScreenViewModel.UiState.Empty)
             MainScreen(
                 state = state,
                 onPlayerEvent = viewModel::onPlayerEvent,
@@ -88,9 +88,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun MainScreen(
-    state: PlayerViewModel.UiState,
-    onPlayerEvent: (PlayerViewModel.PlayerEvent) -> Unit,
-    onQueueEvent: (PlayerViewModel.QueueEvent) -> Unit
+    state: MainScreenViewModel.UiState,
+    onPlayerEvent: (MainScreenViewModel.PlayerEvent) -> Unit,
+    onQueueEvent: (MainScreenViewModel.QueueEvent) -> Unit
 ) {
     ExoAppTheme {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -106,7 +106,7 @@ private fun MainScreen(
                         .padding(innerPadding),
                     verticalArrangement = Arrangement.Bottom
                 ) {
-                    (state as? PlayerViewModel.UiState.Success)?.let { successState ->
+                    (state as? MainScreenViewModel.UiState.Success)?.let { successState ->
                         TrackQueue(successState, onQueueEvent)
                     }
 
@@ -158,8 +158,8 @@ private fun GoToTrackListButton() {
 
 @Composable
 private fun TrackQueue(
-    successState: PlayerViewModel.UiState.Success,
-    onQueueEvent: (PlayerViewModel.QueueEvent) -> Unit
+    successState: MainScreenViewModel.UiState.Success,
+    onQueueEvent: (MainScreenViewModel.QueueEvent) -> Unit
 ) {
     val rowState = rememberLazyListState()
 
@@ -200,7 +200,7 @@ private fun TrackQueue(
 @Composable
 private fun TrackCard(
     track: Track,
-    onQueueEvent: (PlayerViewModel.QueueEvent) -> Unit,
+    onQueueEvent: (MainScreenViewModel.QueueEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -211,7 +211,7 @@ private fun TrackCard(
             .fillMaxSize()
             .clickable {
                 onQueueEvent(
-                    PlayerViewModel.QueueEvent.TrackSelected(
+                    MainScreenViewModel.QueueEvent.TrackSelected(
                         track.id
                     )
                 )
@@ -242,7 +242,7 @@ private fun TrackCard(
                     Button(
                         onClick = {
                             onQueueEvent(
-                                PlayerViewModel.QueueEvent.TrackRemovalRequest(
+                                MainScreenViewModel.QueueEvent.TrackRemovalRequest(
                                     track.id
                                 )
                             )
@@ -270,7 +270,7 @@ private fun TrackCard(
 fun MainScreenEmptyPreview() {
     ExoAppTheme {
         MainScreen(
-            state = PlayerViewModel.UiState.Empty,
+            state = MainScreenViewModel.UiState.Empty,
             onPlayerEvent = {},
             onQueueEvent = {},
         )
@@ -283,7 +283,7 @@ fun MainScreenWithTracksPreview() {
 
     ExoAppTheme {
         MainScreen(
-            state = PlayerViewModel.UiState.Success(
+            state = MainScreenViewModel.UiState.Success(
                 tracks = tracks,
                 currentTrackIndex = 0,
                 mediaItems = emptyList()
@@ -300,7 +300,7 @@ fun MainScreenWithTracksLandscapePreview() {
 
     ExoAppTheme {
         MainScreen(
-            state = PlayerViewModel.UiState.Success(
+            state = MainScreenViewModel.UiState.Success(
                 tracks = tracks,
                 currentTrackIndex = 0,
                 mediaItems = emptyList()
