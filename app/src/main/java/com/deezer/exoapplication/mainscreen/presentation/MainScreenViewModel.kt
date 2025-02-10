@@ -1,16 +1,15 @@
-package com.deezer.exoapplication.player.presentation
+package com.deezer.exoapplication.mainscreen.presentation
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
-import com.deezer.exoapplication.playlist.data.repository.DummyTracksDataSource
-import com.deezer.exoapplication.playlist.data.repository.SimpleListeningQueueRepository
-import com.deezer.exoapplication.playlist.domain.ListeningQueueRepository
-import com.deezer.exoapplication.playlist.domain.Track
+import com.deezer.exoapplication.mainscreen.fwk.TrackToMediaItemMapperImpl
+import com.deezer.exoapplication.core.data.DummyTracksDataSource
+import com.deezer.exoapplication.core.data.SimpleListeningQueueRepository
+import com.deezer.exoapplication.core.domain.ListeningQueueRepository
+import com.deezer.exoapplication.playlist.domain.models.Track
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -20,11 +19,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * What it should do?
- * Provide player with the url of the track to play
- * let it know if there are tracks left to play
- * Provide player with the next track URL to play when the current one ends (maybe even buffer it already)
- * Provide it with the rest of the information (album cover, artist name, track title)?
+ * Outputs: Provides a [UiState] as a [Flow]
+ * Inputs: Either a [PlayerEvent] or a [QueueEvent]
  */
 class MainScreenViewModel(
     private val queueRepository: ListeningQueueRepository,
@@ -182,28 +178,4 @@ class MainScreenViewModel(
         data class TrackSelected(val trackId: Int) : QueueEvent
         data class TrackRemovalRequest(val trackId: Int) : QueueEvent
     }
-}
-
-
-interface TrackToMediaItemMapper {
-    fun mapTrackToMediaItem(track: Track): MainScreenViewModel.PlayerMediaItem
-}
-
-class TrackToMediaItemMapperImpl : TrackToMediaItemMapper {
-    override fun mapTrackToMediaItem(track: Track): MainScreenViewModel.PlayerMediaItem =
-        with(track) {
-            MainScreenViewModel.PlayerMediaItem(
-                MediaItem.Builder()
-                    .setUri(previewUrl)
-                    .setMediaId(id.toString())
-                    .setMediaMetadata(
-                        MediaMetadata.Builder()
-                            .setTitle(title)
-                            .setArtist(artistName)
-                            .setArtworkUri(Uri.parse(coverImageUrl))
-                            .build()
-                    )
-                    .build()
-            )
-        }
 }

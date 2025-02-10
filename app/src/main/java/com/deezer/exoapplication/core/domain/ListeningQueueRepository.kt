@@ -1,5 +1,6 @@
-package com.deezer.exoapplication.playlist.domain
+package com.deezer.exoapplication.core.domain
 
+import com.deezer.exoapplication.playlist.domain.models.Track
 import kotlinx.coroutines.flow.StateFlow
 
 interface ListeningQueueRepository {

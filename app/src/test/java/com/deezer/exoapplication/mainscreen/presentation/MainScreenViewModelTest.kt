@@ -1,10 +1,10 @@
-package com.deezer.exoapplication.player.presentation
+package com.deezer.exoapplication.mainscreen.presentation
 
 import androidx.media3.common.PlaybackException
 import app.cash.turbine.test
-import com.deezer.exoapplication.playlist.data.repository.DummyTracksDataSource
-import com.deezer.exoapplication.playlist.data.repository.SimpleListeningQueueRepository
-import com.deezer.exoapplication.playlist.domain.Track
+import com.deezer.exoapplication.core.data.DummyTracksDataSource
+import com.deezer.exoapplication.core.data.SimpleListeningQueueRepository
+import com.deezer.exoapplication.playlist.domain.models.Track
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher

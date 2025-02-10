@@ -3,11 +3,11 @@ package com.deezer.exoapplication.playlist.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.deezer.exoapplication.playlist.data.repository.DummyTracksDataSource
+import com.deezer.exoapplication.core.data.DummyTracksDataSource
 import com.deezer.exoapplication.playlist.data.repository.SimpleDeezerRepository
-import com.deezer.exoapplication.playlist.data.repository.SimpleListeningQueueRepository
-import com.deezer.exoapplication.playlist.domain.ListeningQueueRepository
-import com.deezer.exoapplication.playlist.domain.Track
+import com.deezer.exoapplication.core.data.SimpleListeningQueueRepository
+import com.deezer.exoapplication.core.domain.ListeningQueueRepository
+import com.deezer.exoapplication.playlist.domain.models.Track
 import com.deezer.exoapplication.playlist.domain.usecases.GetTracksWithPreviewUseCase
 import com.deezer.exoapplication.playlist.fwk.remote.DeezerApiImpl
 import com.deezer.exoapplication.playlist.fwk.utils.AndroidUrlValidator

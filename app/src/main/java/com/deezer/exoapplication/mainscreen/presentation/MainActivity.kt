@@ -1,4 +1,4 @@
-package com.deezer.exoapplication
+package com.deezer.exoapplication.mainscreen.presentation
 
 import android.content.Intent
 import android.content.res.Configuration
@@ -9,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.annotation.OptIn
+import androidx.annotation.RestrictTo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -58,10 +59,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
-import com.deezer.exoapplication.player.presentation.MainScreenViewModel
-import com.deezer.exoapplication.playlist.domain.Track
+import com.deezer.exoapplication.core.presentation.TrackImage
+import com.deezer.exoapplication.playlist.domain.models.Track
 import com.deezer.exoapplication.playlist.presentation.AllTracksActivity
-import com.deezer.exoapplication.playlist.presentation.TrackImage
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
 import com.deezer.exoapplication.ui.theme.Size
 
@@ -269,8 +269,6 @@ private fun TrackCard(
     }
 }
 
-private val playingMediaItem = MainScreenViewModel.PlayerMediaItem(MediaItem.EMPTY)
-
 @Preview
 @Composable
 fun MainScreenEmptyPreview() {
@@ -286,7 +284,6 @@ fun MainScreenEmptyPreview() {
 @Preview
 @Composable
 fun MainScreenWithTracksPreview() {
-
     ExoAppTheme {
         MainScreen(
             state = MainScreenViewModel.UiState.Success(
@@ -303,7 +300,6 @@ fun MainScreenWithTracksPreview() {
 @Preview(widthDp = 900, heightDp = 400)
 @Composable
 fun MainScreenWithTracksLandscapePreview() {
-
     ExoAppTheme {
         MainScreen(
             state = MainScreenViewModel.UiState.Success(
@@ -317,6 +313,7 @@ fun MainScreenWithTracksLandscapePreview() {
     }
 }
 
+@RestrictTo(RestrictTo.Scope.TESTS)
 private val tracks = listOf(
     Track(
         id = 42,
@@ -339,3 +336,6 @@ private val tracks = listOf(
         previewUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
     ),
 )
+
+@RestrictTo(RestrictTo.Scope.TESTS)
+private val playingMediaItem = MainScreenViewModel.PlayerMediaItem(MediaItem.EMPTY)

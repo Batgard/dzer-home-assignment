@@ -1,7 +1,8 @@
 package com.deezer.exoapplication.playlist.domain.usecases
 
 import com.deezer.exoapplication.playlist.domain.DeezerRepository
-import com.deezer.exoapplication.playlist.domain.Track
+import com.deezer.exoapplication.playlist.domain.models.Track
+import com.deezer.exoapplication.playlist.domain.utils.UrlValidator
 
 class GetTracksWithPreviewUseCase(
     private val deezerRepository: DeezerRepository,
@@ -19,6 +20,3 @@ class GetTracksWithPreviewUseCase(
     }
 }
 
-interface UrlValidator {
-    fun isUrlValid(url: String): Boolean
-}

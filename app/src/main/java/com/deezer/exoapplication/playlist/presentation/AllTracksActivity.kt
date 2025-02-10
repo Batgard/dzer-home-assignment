@@ -37,14 +37,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
-import com.deezer.exoapplication.R
+import com.deezer.exoapplication.core.presentation.TrackImage
 import com.deezer.exoapplication.ui.theme.ExoAppTheme
 import com.deezer.exoapplication.ui.theme.Size
 
@@ -188,17 +186,6 @@ fun TrackItem(
             }
         }
     }
-}
-
-@Composable
-fun TrackImage(imageUrl: String, modifier: Modifier = Modifier.size(Size.Image.Medium)) {
-    AsyncImage(
-        model = imageUrl,
-        contentDescription = "Track Cover",
-        modifier = modifier,
-        placeholder = painterResource(id = R.drawable.vinyl),
-        error = painterResource(id = R.drawable.vinyl_broken)
-    )
 }
 
 @Composable

@@ -1,8 +1,8 @@
-package com.deezer.exoapplication.playlist.data.repository
+package com.deezer.exoapplication.core.data
 
 import android.content.res.Resources.NotFoundException
-import com.deezer.exoapplication.playlist.domain.ListeningQueueRepository
-import com.deezer.exoapplication.playlist.domain.Track
+import com.deezer.exoapplication.core.domain.ListeningQueueRepository
+import com.deezer.exoapplication.playlist.domain.models.Track
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
