@@ -56,6 +56,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import com.deezer.exoapplication.player.presentation.MainScreenViewModel
 import com.deezer.exoapplication.playlist.domain.Track
@@ -286,7 +287,7 @@ fun MainScreenWithTracksPreview() {
             state = MainScreenViewModel.UiState.Success(
                 tracks = tracks,
                 currentTrackIndex = 0,
-                mediaItems = emptyList()
+                playingMediaItem = MediaItem.EMPTY,
             ),
             onPlayerEvent = {},
             onQueueEvent = {}
@@ -303,7 +304,7 @@ fun MainScreenWithTracksLandscapePreview() {
             state = MainScreenViewModel.UiState.Success(
                 tracks = tracks,
                 currentTrackIndex = 0,
-                mediaItems = emptyList()
+                playingMediaItem = MediaItem.EMPTY,
             ),
             onPlayerEvent = {},
             onQueueEvent = {}

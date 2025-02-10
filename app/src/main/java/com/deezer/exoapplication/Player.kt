@@ -29,30 +29,29 @@ fun Player(
     val player: ExoPlayer by remember {
         mutableStateOf(
             ExoPlayer.Builder(currentContext).build().apply {
-                repeatMode = Player.REPEAT_MODE_ALL
                 addListener(
                     object : Player.Listener {
                         override fun onPlayerError(error: PlaybackException) {
                             onPlayerEvent(MainScreenViewModel.PlayerEvent.Error(error))
                         }
 
-                        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                            Log.d("Player", "onMediaItemTransition. MediaItem ID == ${mediaItem?.mediaId} for reason $reason")
-                            onPlayerEvent(
-                                MainScreenViewModel.PlayerEvent.SelectedTrackChanged(
-                                    mediaItem?.mediaId
-                                        ?: throw IllegalArgumentException("mediaId cannot be null")
-                                )
-                            )
+                        override fun onEvents(player: Player, events: Player.Events) {
+                            val mediaId = if (player.mediaItemCount > 0) player.getMediaItemAt(0).mediaId else {-1}
+                            Log.d("Player", "onMediaItemTransition. MediaItem ID == $mediaId for reason $events")
+                            super.onEvents(player, events)
                         }
 
-                        override fun onEvents(player: Player, events: Player.Events) {
-                            super.onEvents(player, events)
+                        override fun onPlaybackStateChanged(playbackState: Int) {
+                            Log.d("Player", "onPlaybackStateChanged. State == $playbackState")
+                            if (playbackState == Player.STATE_ENDED) {
+                                onPlayerEvent(
+                                    MainScreenViewModel.PlayerEvent.SelectedTrackEnded
+                                )
+                            }
                         }
                     }
                 )
                 if (state is MainScreenViewModel.UiState.Success) {
-                    setMediaItems(state.mediaItems)
                     prepare()
                     play()
                 }
@@ -65,14 +64,13 @@ fun Player(
         factory = { context ->
             PlayerView(context).apply {
                 setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
-                setShowShuffleButton(true)
+                setShowShuffleButton(false)
                 setPlayer(player)
             }
         },
         update = {
             if (state is MainScreenViewModel.UiState.Success) {
-                player.setMediaItems(state.mediaItems)
-                player.seekTo(state.currentTrackIndex, 0L)
+                player.setMediaItem(state.playingMediaItem)
                 player.prepare()
                 player.play()
             }

@@ -47,10 +47,11 @@ class MainScreenViewModel(
                     queue.first().id
                 }
             }
+            val currentTrackIndex = getSelectedTrackIndex(queue, selectedTrackId)
             UiState.Success(
                 queue.map { it.copy(readable = unplayableTracks.contains(it.id).not()) },
-                getSelectedTrackIndex(queue, selectedTrackId),
-                queue.map { trackToMediaItemMapper.mapTrackToMediaItem(it) },
+                currentTrackIndex,
+                trackToMediaItemMapper.mapTrackToMediaItem(queue[currentTrackIndex]),
             )
         }
     }
@@ -69,8 +70,8 @@ class MainScreenViewModel(
                 handlePlayerError(playerEvent)
             }
 
-            is PlayerEvent.SelectedTrackChanged -> {
-                handleSelectedTrackChange(playerEvent)
+            is PlayerEvent.SelectedTrackEnded -> {
+                handleSelectedTrackEnd(playerEvent)
             }
         }
     }
@@ -99,9 +100,18 @@ class MainScreenViewModel(
         }
     }
 
-    private fun handleSelectedTrackChange(playerEvent: PlayerEvent.SelectedTrackChanged) {
+    private fun handleSelectedTrackEnd(playerEvent: PlayerEvent.SelectedTrackEnded) {
         selectedTrackId.update {
-            playerEvent.trackId.toInt()
+            getNextTrackId(queueRepository.getQueue().value, it)
+        }
+    }
+
+    private fun getNextTrackId(queue: List<Track>, currentTrackId: Int): Int {
+        val indexOfSelectedTrack = getSelectedTrackIndex(queue, currentTrackId)
+        return if (indexOfSelectedTrack < queue.lastIndex) {
+            queue[indexOfSelectedTrack + 1].id
+        } else {
+            NO_TRACK_SELECTED
         }
     }
 
@@ -144,13 +154,13 @@ class MainScreenViewModel(
         data class Success(
             val tracks: List<Track>,
             val currentTrackIndex: Int = DEFAULT_SELECTED_TRACK_INDEX,
-            val mediaItems: List<MediaItem>
+            val playingMediaItem: MediaItem
         ) : UiState
     }
 
     sealed interface PlayerEvent {
+        object SelectedTrackEnded : PlayerEvent
         data class Error(val error: PlaybackException) : PlayerEvent
-        data class SelectedTrackChanged(val trackId: String) : PlayerEvent
     }
 
     sealed interface QueueEvent {

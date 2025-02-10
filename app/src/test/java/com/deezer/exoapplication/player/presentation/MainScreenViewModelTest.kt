@@ -57,7 +57,7 @@ class MainScreenViewModelTest {
                             track1
                         ),
                         currentTrackIndex = 0,
-                        mediaItems = listOf(mockedMediaItem)
+                        playingMediaItem = mockedMediaItem
                     ),
                     expectMostRecentItem()
                 )
@@ -84,7 +84,7 @@ class MainScreenViewModelTest {
                             track1, track2
                         ),
                         currentTrackIndex = 1,
-                        mediaItems = listOf(mockedMediaItem, mockedMediaItem)
+                        playingMediaItem = mockedMediaItem
                     ),
                     expectMostRecentItem()
                 )
@@ -103,7 +103,7 @@ class MainScreenViewModelTest {
             DummyTracksDataSource.addTrack(track2)
             viewModel.state.test {
                 // When
-                viewModel.onPlayerEvent(MainScreenViewModel.PlayerEvent.SelectedTrackChanged(track2.id.toString()))
+                viewModel.onPlayerEvent(MainScreenViewModel.PlayerEvent.SelectedTrackEnded(track2.id.toString()))
                 // Then
                 assertEquals(
                     MainScreenViewModel.UiState.Success(
@@ -111,7 +111,7 @@ class MainScreenViewModelTest {
                             track1, track2
                         ),
                         currentTrackIndex = 1,
-                        mediaItems = listOf(mockedMediaItem, mockedMediaItem)
+                        playingMediaItem = mockedMediaItem
                     ),
                     expectMostRecentItem()
                 )
@@ -139,7 +139,7 @@ class MainScreenViewModelTest {
                             track2
                         ),
                         currentTrackIndex = 1,
-                        mediaItems = listOf(mockedMediaItem, mockedMediaItem)
+                        playingMediaItem = mockedMediaItem
                     ),
                     expectMostRecentItem()
                 )
