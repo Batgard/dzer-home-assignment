@@ -66,7 +66,6 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
-    testImplementation(libs.junit.jupiter)
     testRuntimeOnly (libs.junitEngine)
     testImplementation (libs.junitParams)
     testRuntimeOnly (libs.junitVintageEngine)
