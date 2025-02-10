@@ -42,7 +42,7 @@ class MainScreenViewModel(
         if (queue.isEmpty()) {
             UiState.Empty
         } else {
-            if (isThereASelectedTrack(selectedTrackId)) {
+            if (noSelectedTrack(selectedTrackId)) {
                 this.selectedTrackId.update {
                     queue.first().id
                 }
@@ -54,14 +54,6 @@ class MainScreenViewModel(
                 trackToMediaItemMapper.mapTrackToMediaItem(queue[currentTrackIndex]),
             )
         }
-    }
-
-    private fun isThereASelectedTrack(selectedTrackId: Int) = selectedTrackId == NO_TRACK_SELECTED
-
-
-    private fun getSelectedTrackIndex(queue: List<Track>, trackId: Int): Int {
-        val indexOfFirst = queue.indexOfFirst { it.id == trackId }
-        return indexOfFirst.coerceAtLeast(DEFAULT_SELECTED_TRACK_INDEX)
     }
 
     fun onPlayerEvent(playerEvent: PlayerEvent) {
@@ -90,6 +82,12 @@ class MainScreenViewModel(
 
     private fun handleTrackRemovalRequest(queueEvent: QueueEvent.TrackRemovalRequest) {
         viewModelScope.launch(coroutineDispatcher) {
+            selectedTrackId.emit(
+                getNextTrackId(
+                    queueRepository.getQueue().value,
+                    queueEvent.trackId
+                )
+            )
             queueRepository.removeTrackFromQueue(queueEvent.trackId)
         }
     }
@@ -104,6 +102,13 @@ class MainScreenViewModel(
         selectedTrackId.update {
             getNextTrackId(queueRepository.getQueue().value, it)
         }
+    }
+
+    private fun noSelectedTrack(selectedTrackId: Int) = selectedTrackId == NO_TRACK_SELECTED
+
+    private fun getSelectedTrackIndex(queue: List<Track>, trackId: Int): Int {
+        val indexOfFirst = queue.indexOfFirst { it.id == trackId }
+        return indexOfFirst.coerceAtLeast(DEFAULT_SELECTED_TRACK_INDEX)
     }
 
     private fun getNextTrackId(queue: List<Track>, currentTrackId: Int): Int {
@@ -185,17 +190,20 @@ interface TrackToMediaItemMapper {
 }
 
 class TrackToMediaItemMapperImpl : TrackToMediaItemMapper {
-    override fun mapTrackToMediaItem(track: Track): MainScreenViewModel.PlayerMediaItem = with(track) {
-        MainScreenViewModel.PlayerMediaItem(MediaItem.Builder()
-            .setUri(previewUrl)
-            .setMediaId(id.toString())
-            .setMediaMetadata(
-                MediaMetadata.Builder()
-                    .setTitle(title)
-                    .setArtist(artistName)
-                    .setArtworkUri(Uri.parse(coverImageUrl))
+    override fun mapTrackToMediaItem(track: Track): MainScreenViewModel.PlayerMediaItem =
+        with(track) {
+            MainScreenViewModel.PlayerMediaItem(
+                MediaItem.Builder()
+                    .setUri(previewUrl)
+                    .setMediaId(id.toString())
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(title)
+                            .setArtist(artistName)
+                            .setArtworkUri(Uri.parse(coverImageUrl))
+                            .build()
+                    )
                     .build()
             )
-            .build())
-    }
+        }
 }

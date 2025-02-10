@@ -7,7 +7,9 @@ import com.deezer.exoapplication.playlist.data.repository.SimpleListeningQueueRe
 import com.deezer.exoapplication.playlist.domain.Track
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.Test
 
 class MainScreenViewModelTest {
 
+    private val testDispatcher = StandardTestDispatcher()
     private val trackToMediaItemMapper: TrackToMediaItemMapper = mockk()
 
     @AfterEach
@@ -145,10 +148,55 @@ class MainScreenViewModelTest {
             }
         }
 
-    private fun createMainScreenViewModel(mockedTrackToMediaItemMapper: TrackToMediaItemMapper) =
+    /**
+     * FIXME: I couldn't get expectMostRecentItem() to receive the actual latest value emitted
+     */
+    @Test
+    fun `Given queue contains 3 tracks and track 2 is being played, when deleting it then emits new state with track 3 sets as current track`() =
+        runTest(testDispatcher) {
+            // Given
+            val viewModel = createMainScreenViewModel(trackToMediaItemMapper, testDispatcher)
+            val mockedMediaItem1or2 = mockk<MainScreenViewModel.PlayerMediaItem>()
+            val mockedMediaItem3 = mockk<MainScreenViewModel.PlayerMediaItem>()
+            every { trackToMediaItemMapper.mapTrackToMediaItem(track1) } returns mockedMediaItem1or2
+            every { trackToMediaItemMapper.mapTrackToMediaItem(track2) } returns mockedMediaItem1or2
+            every { trackToMediaItemMapper.mapTrackToMediaItem(track3) } returns mockedMediaItem3
+
+            DummyTracksDataSource.addTrack(track1)
+            DummyTracksDataSource.addTrack(track2)
+            DummyTracksDataSource.addTrack(track3)
+
+            viewModel.state.test {
+                viewModel.onQueueEvent(MainScreenViewModel.QueueEvent.TrackSelected(track2.id))
+                // When
+                viewModel.onQueueEvent(MainScreenViewModel.QueueEvent.TrackRemovalRequest(track2.id))
+                awaitItem()
+                awaitItem()
+                awaitItem()
+                awaitItem()
+                // Then
+                assertEquals(
+                    MainScreenViewModel.UiState.Success(
+                        tracks = listOf(
+                            track1,
+                            track3
+                        ),
+                        currentTrackIndex = 1,
+                        playingMediaItem = mockedMediaItem3
+                    ),
+                    awaitItem()
+                )
+            }
+        }
+
+    private fun createMainScreenViewModel(
+        mockedTrackToMediaItemMapper: TrackToMediaItemMapper,
+        dispatcher: CoroutineDispatcher = StandardTestDispatcher()
+    ) =
         MainScreenViewModel(
             queueRepository = SimpleListeningQueueRepository(DummyTracksDataSource),
-            mockedTrackToMediaItemMapper,
+            trackToMediaItemMapper = mockedTrackToMediaItemMapper,
+            coroutineDispatcher = dispatcher
         )
 
     private val track1 = Track(
@@ -173,5 +221,15 @@ class MainScreenViewModelTest {
         readable = true,
     )
 
+    private val track3 = Track(
+        id = 9000,
+        title = "You got this",
+        durationInSeconds = 300,
+        albumTitle = "",
+        coverImageUrl = "",
+        artistName = "",
+        previewUrl = "",
+        readable = true,
+    )
 
 }
