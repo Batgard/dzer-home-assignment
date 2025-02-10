@@ -114,8 +114,11 @@ private fun MainScreen(
                     Spacer(modifier = Modifier.height(Size.Spacing.Large))
 
                     if (LocalInspectionMode.current.not()) {
+                        val mediaItem =
+                            (state as? MainScreenViewModel.UiState.Success)?.playingMediaItem
+                        Log.d("Player", "${mediaItem.hashCode()}")
                         Player(
-                            state = state,
+                            mediaItem = mediaItem,
                             onPlayerEvent = onPlayerEvent,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -266,6 +269,8 @@ private fun TrackCard(
     }
 }
 
+private val playingMediaItem = MainScreenViewModel.PlayerMediaItem(MediaItem.EMPTY)
+
 @Preview
 @Composable
 fun MainScreenEmptyPreview() {
@@ -287,7 +292,7 @@ fun MainScreenWithTracksPreview() {
             state = MainScreenViewModel.UiState.Success(
                 tracks = tracks,
                 currentTrackIndex = 0,
-                playingMediaItem = MediaItem.EMPTY,
+                playingMediaItem = playingMediaItem,
             ),
             onPlayerEvent = {},
             onQueueEvent = {}
@@ -304,7 +309,7 @@ fun MainScreenWithTracksLandscapePreview() {
             state = MainScreenViewModel.UiState.Success(
                 tracks = tracks,
                 currentTrackIndex = 0,
-                playingMediaItem = MediaItem.EMPTY,
+                playingMediaItem = playingMediaItem,
             ),
             onPlayerEvent = {},
             onQueueEvent = {}

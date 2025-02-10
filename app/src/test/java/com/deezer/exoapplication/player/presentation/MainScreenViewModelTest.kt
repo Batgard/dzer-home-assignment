@@ -1,6 +1,5 @@
 package com.deezer.exoapplication.player.presentation
 
-import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import app.cash.turbine.test
 import com.deezer.exoapplication.playlist.data.repository.DummyTracksDataSource
@@ -44,7 +43,7 @@ class MainScreenViewModelTest {
         runTest {
             // Given
             val viewModel = createMainScreenViewModel(trackToMediaItemMapper)
-            val mockedMediaItem = mockk<MediaItem>()
+            val mockedMediaItem = mockk<MainScreenViewModel.PlayerMediaItem>()
             every { trackToMediaItemMapper.mapTrackToMediaItem(any()) } returns mockedMediaItem
 
             viewModel.state.test {
@@ -69,7 +68,7 @@ class MainScreenViewModelTest {
         runTest {
             // Given
             val viewModel = createMainScreenViewModel(trackToMediaItemMapper)
-            val mockedMediaItem = mockk<MediaItem>()
+            val mockedMediaItem = mockk<MainScreenViewModel.PlayerMediaItem>()
             every { trackToMediaItemMapper.mapTrackToMediaItem(any()) } returns mockedMediaItem
 
             DummyTracksDataSource.addTrack(track1)
@@ -96,14 +95,14 @@ class MainScreenViewModelTest {
         runTest {
             // Given
             val viewModel = createMainScreenViewModel(trackToMediaItemMapper)
-            val mockedMediaItem = mockk<MediaItem>()
+            val mockedMediaItem = mockk<MainScreenViewModel.PlayerMediaItem>()
             every { trackToMediaItemMapper.mapTrackToMediaItem(any()) } returns mockedMediaItem
 
             DummyTracksDataSource.addTrack(track1)
             DummyTracksDataSource.addTrack(track2)
             viewModel.state.test {
                 // When
-                viewModel.onPlayerEvent(MainScreenViewModel.PlayerEvent.SelectedTrackEnded(track2.id.toString()))
+                viewModel.onPlayerEvent(MainScreenViewModel.PlayerEvent.SelectedTrackEnded)
                 // Then
                 assertEquals(
                     MainScreenViewModel.UiState.Success(
@@ -123,7 +122,7 @@ class MainScreenViewModelTest {
         runTest {
             // Given
             val viewModel = createMainScreenViewModel(trackToMediaItemMapper)
-            val mockedMediaItem = mockk<MediaItem>()
+            val mockedMediaItem = mockk<MainScreenViewModel.PlayerMediaItem>()
             every { trackToMediaItemMapper.mapTrackToMediaItem(any()) } returns mockedMediaItem
 
             DummyTracksDataSource.addTrack(track1)

@@ -71,7 +71,7 @@ class MainScreenViewModel(
             }
 
             is PlayerEvent.SelectedTrackEnded -> {
-                handleSelectedTrackEnd(playerEvent)
+                handleSelectedTrackEnd()
             }
         }
     }
@@ -100,7 +100,7 @@ class MainScreenViewModel(
         }
     }
 
-    private fun handleSelectedTrackEnd(playerEvent: PlayerEvent.SelectedTrackEnded) {
+    private fun handleSelectedTrackEnd() {
         selectedTrackId.update {
             getNextTrackId(queueRepository.getQueue().value, it)
         }
@@ -116,7 +116,7 @@ class MainScreenViewModel(
     }
 
     private fun handlePlayerError(playerEvent: PlayerEvent.Error) {
-        //TODO: Do something with the playerEvent
+        //TODO: Do something with the playerEvent like logging it to crashlytics or any monitoring tool
         val queue = queueRepository.getQueue().value
         val selectedTrackId = selectedTrackId.value
         val indexOfSelectedTrack = getSelectedTrackIndex(queue, selectedTrackId)
@@ -154,8 +154,18 @@ class MainScreenViewModel(
         data class Success(
             val tracks: List<Track>,
             val currentTrackIndex: Int = DEFAULT_SELECTED_TRACK_INDEX,
-            val playingMediaItem: MediaItem
+            val playingMediaItem: PlayerMediaItem,
         ) : UiState
+    }
+
+    data class PlayerMediaItem(val mediaItem: MediaItem) {
+        override fun equals(other: Any?): Boolean {
+            return mediaItem.mediaId == (other as? PlayerMediaItem)?.mediaItem?.mediaId
+        }
+
+        override fun hashCode(): Int {
+            return mediaItem.mediaId.hashCode()
+        }
     }
 
     sealed interface PlayerEvent {
@@ -171,12 +181,12 @@ class MainScreenViewModel(
 
 
 interface TrackToMediaItemMapper {
-    fun mapTrackToMediaItem(track: Track): MediaItem
+    fun mapTrackToMediaItem(track: Track): MainScreenViewModel.PlayerMediaItem
 }
 
 class TrackToMediaItemMapperImpl : TrackToMediaItemMapper {
-    override fun mapTrackToMediaItem(track: Track): MediaItem = with(track) {
-        MediaItem.Builder()
+    override fun mapTrackToMediaItem(track: Track): MainScreenViewModel.PlayerMediaItem = with(track) {
+        MainScreenViewModel.PlayerMediaItem(MediaItem.Builder()
             .setUri(previewUrl)
             .setMediaId(id.toString())
             .setMediaMetadata(
@@ -186,7 +196,6 @@ class TrackToMediaItemMapperImpl : TrackToMediaItemMapper {
                     .setArtworkUri(Uri.parse(coverImageUrl))
                     .build()
             )
-            .build()
-
+            .build())
     }
 }
