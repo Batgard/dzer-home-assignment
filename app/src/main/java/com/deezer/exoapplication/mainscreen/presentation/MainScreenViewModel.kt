@@ -7,7 +7,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import com.deezer.exoapplication.core.data.DummyTracksDataSource
 import com.deezer.exoapplication.core.data.SimpleListeningQueueRepository
-import com.deezer.exoapplication.core.domain.ListeningQueueRepository
+import com.deezer.exoapplication.core.domain.GetListeningQueueUseCase
+import com.deezer.exoapplication.mainscreen.domain.RemoveTrackFromQueueUseCase
 import com.deezer.exoapplication.mainscreen.framework.TrackToMediaItemMapperImpl
 import com.deezer.exoapplication.mainscreen.presentation.MainScreenViewModel.PlayerEvent
 import com.deezer.exoapplication.mainscreen.presentation.MainScreenViewModel.QueueEvent
@@ -28,7 +29,8 @@ import kotlin.coroutines.cancellation.CancellationException
  * Inputs: Either a [PlayerEvent] or a [QueueEvent]
  */
 class MainScreenViewModel(
-    private val queueRepository: ListeningQueueRepository,
+    private val getListeningQueue: GetListeningQueueUseCase,
+    private val removeTrackFromQueue: RemoveTrackFromQueueUseCase,
     private val trackToMediaItemMapper: TrackToMediaItemMapper,
     private val coroutineDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
@@ -50,7 +52,7 @@ class MainScreenViewModel(
     private val selectedTrackId: MutableStateFlow<Int> = MutableStateFlow(NO_TRACK_SELECTED)
     private val unplayableTracks: MutableStateFlow<List<Int>> = MutableStateFlow(emptyList())
     val state: Flow<UiState> = combine(
-        queueRepository.getQueue(),
+        getListeningQueue(),
         selectedTrackId,
         unplayableTracks,
     ) { queue, selectedTrackId, unplayableTracks ->
@@ -99,11 +101,11 @@ class MainScreenViewModel(
         viewModelScope.launch(coroutineDispatcher + exceptionHandler) {
             selectedTrackId.emit(
                 getNextTrackId(
-                    queueRepository.getQueue().value,
+                    getListeningQueue().value,
                     queueEvent.trackId
                 )
             )
-            queueRepository.removeTrackFromQueue(queueEvent.trackId)
+            removeTrackFromQueue(queueEvent.trackId)
         }
     }
 
@@ -115,7 +117,7 @@ class MainScreenViewModel(
 
     private fun handleSelectedTrackEnd() {
         selectedTrackId.update {
-            getNextTrackId(queueRepository.getQueue().value, it)
+            getNextTrackId(getListeningQueue().value, it)
         }
     }
 
@@ -137,7 +139,7 @@ class MainScreenViewModel(
 
     private fun handlePlayerError(playerEvent: PlayerEvent.Error) {
         //TODO: Do something with the playerEvent like logging it to crashlytics or any monitoring tool
-        val queue = queueRepository.getQueue().value
+        val queue = getListeningQueue().value
         val selectedTrackId = selectedTrackId.value
         val indexOfSelectedTrack = getSelectedTrackIndex(queue, selectedTrackId)
         if (indexOfSelectedTrack < queue.lastIndex) {
@@ -159,8 +161,10 @@ class MainScreenViewModel(
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(MainScreenViewModel::class.java)) {
+                val repository = SimpleListeningQueueRepository(DummyTracksDataSource)
                 return MainScreenViewModel(
-                    queueRepository = SimpleListeningQueueRepository(DummyTracksDataSource),
+                    getListeningQueue = GetListeningQueueUseCase(repository),
+                    removeTrackFromQueue = RemoveTrackFromQueueUseCase(repository),
                     trackToMediaItemMapper = TrackToMediaItemMapperImpl(),
                 ) as T
             } else {

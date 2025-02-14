@@ -5,9 +5,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.deezer.exoapplication.core.data.DummyTracksDataSource
 import com.deezer.exoapplication.core.data.SimpleListeningQueueRepository
-import com.deezer.exoapplication.core.domain.ListeningQueueRepository
+import com.deezer.exoapplication.core.domain.GetListeningQueueUseCase
 import com.deezer.exoapplication.playlist.data.repository.SimpleDeezerRepository
 import com.deezer.exoapplication.playlist.domain.models.Track
+import com.deezer.exoapplication.playlist.domain.usecases.AddOrRemoveTrackFromQueueUseCase
 import com.deezer.exoapplication.playlist.domain.usecases.GetTracksWithPreviewUseCase
 import com.deezer.exoapplication.playlist.framework.remote.DeezerApiImpl
 import com.deezer.exoapplication.playlist.framework.utils.AndroidUrlValidator
@@ -23,7 +24,8 @@ import kotlinx.coroutines.launch
 
 class TrackListViewModel(
     private val getTracksWithPreview: GetTracksWithPreviewUseCase,
-    private val queueRepository: ListeningQueueRepository,
+    private val addOrRemoveTrackFromQueue: AddOrRemoveTrackFromQueueUseCase,
+    private val getListeningQueue: GetListeningQueueUseCase,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -42,14 +44,15 @@ class TrackListViewModel(
     }
     private val subcoroutineContext = dispatcher + exceptionHandler
 
-    private val trackListState: MutableStateFlow<TrackListState> = MutableStateFlow(TrackListState.Initial)
+    private val trackListState: MutableStateFlow<TrackListState> =
+        MutableStateFlow(TrackListState.Initial)
     val state: Flow<UiState> =
-        combine(queueRepository.getQueue(), trackListState) { queue, trackList ->
+        combine(getListeningQueue(), trackListState) { queue, trackList ->
             when (trackList) {
                 TrackListState.Initial -> UiState.Loading
                 TrackListState.Empty -> UiState.Empty
                 is TrackListState.Success -> UiState.Success(trackList.tracks.map { track ->
-                    track.toUiModel(queue.firstOrNull { it.id == track.id} != null)
+                    track.toUiModel(queue.firstOrNull { it.id == track.id } != null)
                 })
 
                 is TrackListState.Error -> UiState.Error(trackList.message)
@@ -72,16 +75,16 @@ class TrackListViewModel(
 
     fun onTrackClick(trackId: Int) {
         viewModelScope.launch(subcoroutineContext) {
-            val track =
-                (trackListState.value as? TrackListState.Success)?.tracks?.find { it.id == trackId }
-                    ?: throw IllegalArgumentException("Track not found") // TODO: Just show a toaster with an error message and log the issue to the monitoring tool (Crashlytics or something else)
-            if (queueRepository.getQueue().value.contains(track)) {
-                queueRepository.removeTrackFromQueue(track.id)
-            } else {
-                queueRepository.addTrackToQueue(track)
+            val track = findTrackInState(trackId)
+            addOrRemoveTrackFromQueue(track).onFailure {
+                // TODO: Show error message, not blocking and report the issue
             }
         }
     }
+
+    private fun findTrackInState(trackId: Int) =
+        ((trackListState.value as? TrackListState.Success)?.tracks?.find { it.id == trackId }
+            ?: throw IllegalArgumentException("Track not found"))  // TODO: Just show a toaster with an error message and log the issue to the monitoring tool (Crashlytics or something else)
 
     private fun Track.toUiModel(isQueued: Boolean): TrackUiModel {
         return TrackUiModel(
@@ -123,12 +126,14 @@ class TrackListViewModel(
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(TrackListViewModel::class.java)) {
+                val queueRepository = SimpleListeningQueueRepository(DummyTracksDataSource)
                 return TrackListViewModel(
                     getTracksWithPreview = GetTracksWithPreviewUseCase(
                         SimpleDeezerRepository(DeezerApiImpl()),
                         urlValidator = AndroidUrlValidator()
                     ),
-                    queueRepository = SimpleListeningQueueRepository(DummyTracksDataSource),
+                    getListeningQueue = GetListeningQueueUseCase(queueRepository),
+                    addOrRemoveTrackFromQueue = AddOrRemoveTrackFromQueueUseCase(queueRepository)
                 ) as T
             } else {
                 throw IllegalArgumentException("Unknown ViewModel class $modelClass")

@@ -14,16 +14,13 @@ class SimpleListeningQueueRepository(private val dataSource: TracksDataSource) :
         return dataSource.getTracks()
     }
 
-    override suspend fun addTrackToQueue(track: Track): Result<Unit> {
+    override suspend fun addTrackToQueue(track: Track): Result<Unit> = runCatching {
         dataSource.addTrack(track)
-        return Result.success(Unit)
     }
 
-    override suspend fun removeTrackFromQueue(trackId: Int): Result<Unit> {
-        return if (dataSource.removeTrack(trackId)) {
-            Result.success(Unit)
-        } else {
-            Result.failure(NotFoundException("Track $trackId not found in queue"))
+    override suspend fun removeTrackFromQueue(trackId: Int): Result<Unit> = runCatching {
+        if (dataSource.removeTrack(trackId).not()) {
+            throw NotFoundException("Track $trackId not found in queue")
         }
     }
 }
