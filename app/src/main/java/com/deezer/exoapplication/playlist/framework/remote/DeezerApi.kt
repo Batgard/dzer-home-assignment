@@ -1,6 +1,6 @@
-package com.deezer.exoapplication.playlist.fwk.remote
+package com.deezer.exoapplication.playlist.framework.remote
 
-import com.deezer.exoapplication.playlist.fwk.models.TracksResponse
+import com.deezer.exoapplication.playlist.framework.models.TracksResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android

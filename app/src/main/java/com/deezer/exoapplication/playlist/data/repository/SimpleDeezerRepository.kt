@@ -2,7 +2,7 @@ package com.deezer.exoapplication.playlist.data.repository
 
 import com.deezer.exoapplication.playlist.domain.DeezerRepository
 import com.deezer.exoapplication.playlist.domain.models.Track
-import com.deezer.exoapplication.playlist.fwk.remote.DeezerApi
+import com.deezer.exoapplication.playlist.framework.remote.DeezerApi
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

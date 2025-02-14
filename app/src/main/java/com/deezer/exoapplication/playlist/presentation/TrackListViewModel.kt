@@ -9,8 +9,8 @@ import com.deezer.exoapplication.core.domain.ListeningQueueRepository
 import com.deezer.exoapplication.playlist.data.repository.SimpleDeezerRepository
 import com.deezer.exoapplication.playlist.domain.models.Track
 import com.deezer.exoapplication.playlist.domain.usecases.GetTracksWithPreviewUseCase
-import com.deezer.exoapplication.playlist.fwk.remote.DeezerApiImpl
-import com.deezer.exoapplication.playlist.fwk.utils.AndroidUrlValidator
+import com.deezer.exoapplication.playlist.framework.remote.DeezerApiImpl
+import com.deezer.exoapplication.playlist.framework.utils.AndroidUrlValidator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler

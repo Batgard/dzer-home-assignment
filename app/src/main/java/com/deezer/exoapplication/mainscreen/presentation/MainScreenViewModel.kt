@@ -8,7 +8,7 @@ import androidx.media3.common.PlaybackException
 import com.deezer.exoapplication.core.data.DummyTracksDataSource
 import com.deezer.exoapplication.core.data.SimpleListeningQueueRepository
 import com.deezer.exoapplication.core.domain.ListeningQueueRepository
-import com.deezer.exoapplication.mainscreen.fwk.TrackToMediaItemMapperImpl
+import com.deezer.exoapplication.mainscreen.framework.TrackToMediaItemMapperImpl
 import com.deezer.exoapplication.mainscreen.presentation.MainScreenViewModel.PlayerEvent
 import com.deezer.exoapplication.mainscreen.presentation.MainScreenViewModel.QueueEvent
 import com.deezer.exoapplication.mainscreen.presentation.MainScreenViewModel.UiState

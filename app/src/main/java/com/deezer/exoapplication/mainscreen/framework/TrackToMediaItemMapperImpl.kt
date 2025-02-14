@@ -1,4 +1,4 @@
-package com.deezer.exoapplication.mainscreen.fwk
+package com.deezer.exoapplication.mainscreen.framework
 
 import android.net.Uri
 import androidx.media3.common.MediaItem
