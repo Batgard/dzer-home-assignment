@@ -11,24 +11,20 @@ class SimpleDeezerRepository(
     private val deezerApi: DeezerApi,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : DeezerRepository {
-    override suspend fun getTrackList(): Result<List<Track>> {
-        return try {
-            Result.success(withContext(defaultDispatcher) {
-                deezerApi.getTrackList().tracks.map {
-                    Track(
-                        id = it.id,
-                        title = it.title,
-                        durationInSeconds = it.duration,
-                        coverImageUrl = it.album.cover,
-                        artistName = it.artist.name,
-                        albumTitle = it.album.title,
-                        previewUrl = it.preview,
-                        readable = it.readable,
-                    )
-                }
-            })
-        } catch (e: Exception) {
-            Result.failure(e)
+    override suspend fun getTrackList(): Result<List<Track>> = runCatching {
+        withContext(defaultDispatcher) {
+            deezerApi.getTrackList().tracks.map {
+                Track(
+                    id = it.id,
+                    title = it.title,
+                    durationInSeconds = it.duration,
+                    coverImageUrl = it.album.cover,
+                    artistName = it.artist.name,
+                    albumTitle = it.album.title,
+                    previewUrl = it.preview,
+                    readable = it.readable,
+                )
+            }
         }
     }
 }

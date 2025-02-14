@@ -4,14 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.deezer.exoapplication.core.data.DummyTracksDataSource
-import com.deezer.exoapplication.playlist.data.repository.SimpleDeezerRepository
 import com.deezer.exoapplication.core.data.SimpleListeningQueueRepository
 import com.deezer.exoapplication.core.domain.ListeningQueueRepository
+import com.deezer.exoapplication.playlist.data.repository.SimpleDeezerRepository
 import com.deezer.exoapplication.playlist.domain.models.Track
 import com.deezer.exoapplication.playlist.domain.usecases.GetTracksWithPreviewUseCase
 import com.deezer.exoapplication.playlist.fwk.remote.DeezerApiImpl
 import com.deezer.exoapplication.playlist.fwk.utils.AndroidUrlValidator
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +26,21 @@ class TrackListViewModel(
     private val queueRepository: ListeningQueueRepository,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
+
+    private val exceptionHandler = CoroutineExceptionHandler { coroutineContext, throwable ->
+        /* TODO: Depending on the context, we might either want to show a generic error message
+         or just reset the screen to start afresh (meaning: cleaning the queue and maybe resetting the database
+         */
+        if (throwable is CancellationException) {
+            // Maybe thrown because the screen is no longer needed so don't try to recover from it
+        } else {
+            // Display error message
+            // Log it (locally and/or remotely)
+            // reset the viewModel's state
+            // Note: this shouldn't happen as all exceptions are channeled through the Result.failure callback
+        }
+    }
+    private val subcoroutineContext = dispatcher + exceptionHandler
 
     private val trackListState: MutableStateFlow<TrackListState> = MutableStateFlow(TrackListState.Initial)
     val state: Flow<UiState> =
@@ -40,7 +57,7 @@ class TrackListViewModel(
         }
 
     init {
-        viewModelScope.launch(dispatcher) {
+        viewModelScope.launch(subcoroutineContext) {
             getTracksWithPreview().onSuccess { tracks ->
                 trackListState.update {
                     TrackListState.Success(tracks)
@@ -54,7 +71,7 @@ class TrackListViewModel(
     }
 
     fun onTrackClick(trackId: Int) {
-        viewModelScope.launch(dispatcher) {
+        viewModelScope.launch(subcoroutineContext) {
             val track =
                 (trackListState.value as? TrackListState.Success)?.tracks?.find { it.id == trackId }
                     ?: throw IllegalArgumentException("Track not found") // TODO: Just show a toaster with an error message and log the issue to the monitoring tool (Crashlytics or something else)
