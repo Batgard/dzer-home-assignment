@@ -1,4 +1,4 @@
-package com.deezer.exoapplication.playlist.fwk.utils
+package com.deezer.exoapplication.playlist.framework.utils
 
 import android.webkit.URLUtil
 import com.deezer.exoapplication.playlist.domain.utils.UrlValidator

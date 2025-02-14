@@ -1,4 +1,4 @@
-package com.deezer.exoapplication.playlist.fwk.models
+package com.deezer.exoapplication.playlist.framework.models
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

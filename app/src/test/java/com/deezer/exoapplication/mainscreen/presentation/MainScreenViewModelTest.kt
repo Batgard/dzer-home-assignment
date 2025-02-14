@@ -4,6 +4,8 @@ import androidx.media3.common.PlaybackException
 import app.cash.turbine.test
 import com.deezer.exoapplication.core.data.DummyTracksDataSource
 import com.deezer.exoapplication.core.data.SimpleListeningQueueRepository
+import com.deezer.exoapplication.core.domain.GetListeningQueueUseCase
+import com.deezer.exoapplication.mainscreen.domain.RemoveTrackFromQueueUseCase
 import com.deezer.exoapplication.playlist.domain.models.Track
 import io.mockk.every
 import io.mockk.mockk
@@ -192,12 +194,15 @@ class MainScreenViewModelTest {
     private fun createMainScreenViewModel(
         mockedTrackToMediaItemMapper: TrackToMediaItemMapper,
         dispatcher: CoroutineDispatcher = StandardTestDispatcher()
-    ) =
-        MainScreenViewModel(
-            queueRepository = SimpleListeningQueueRepository(DummyTracksDataSource),
+    ): MainScreenViewModel {
+        val listeningQueueRepository = SimpleListeningQueueRepository(DummyTracksDataSource)
+        return MainScreenViewModel(
+            getListeningQueue = GetListeningQueueUseCase(listeningQueueRepository),
+            removeTrackFromQueue = RemoveTrackFromQueueUseCase(listeningQueueRepository),
             trackToMediaItemMapper = mockedTrackToMediaItemMapper,
             coroutineDispatcher = dispatcher
         )
+    }
 
     private val track1 = Track(
         id = 42,
